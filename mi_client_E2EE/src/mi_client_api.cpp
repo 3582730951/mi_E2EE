@@ -644,6 +644,9 @@ EncBuffer wrap_message_with_honey(const EncString target_username, const EncJson
     return buf;
 }
 
+// Forward declaration
+EncJson unwrap_message_with_honey(const EncBuffer* input, std::unique_ptr<EncHolder>& holder);
+
 EncJson unwrap_message_with_honey(const EncBuffer* input, std::unique_ptr<EncHolder>& holder) {
     holder = std::make_unique<EncHolder>();
     const uint8_t* p = input->data;
@@ -1445,15 +1448,6 @@ MI_Result MI_CALL MI_DecodeEncJson(const EncJson* enc, char* out_buf, size_t out
 MI_Result MI_CALL MI_SetRawReceive(MI_RecvRawCallback cb) {
     g_raw_recv = cb;
     return MI_OK;
-}
-
-MI_Result MI_CALL MI_RegisterMessageCallback(MI_MessageCallback cb) {
-    g_msg_cb = cb;
-    return MI_OK;
-}
-
-MI_Result MI_CALL MI_SecureEraseFile(const char* path, uint64_t size_hint) {
-    return SecureEraseFile(path, size_hint);
 }
 
 } // extern "C"

@@ -3,6 +3,7 @@
 #include "crypto_stub.h"
 
 #include <fstream>
+#include <cstring>
 #include <vector>
 
 bool ComputeFileHmac(const char* path, const uint8_t key[32], std::vector<uint8_t>& out_hmac, uint32_t chunk_size) {

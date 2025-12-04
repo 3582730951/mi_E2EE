@@ -97,6 +97,7 @@ jobs:
         run: |
           npm install --no-fund --no-audit
           npm run build
+          New-Item -ItemType Directory -Force -Path ..\..\..\dist | Out-Null
           if (Test-Path dist) {
             Compress-Archive -Path dist\* -DestinationPath ..\..\..\dist\client-electron-windows.zip -Force
           }

@@ -55,16 +55,16 @@ PY
           cat cert.env >> "$GITHUB_ENV"
 
       - name: Configure
-        run: |
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ env.CMAKE_BUILD_TYPE }} ^
-            -DMI_USE_OPENSSL=ON -DMI_USE_KCP=ON -DMI_USE_MYSQL=ON ^
-            -DMI_SERVER_PUB_HEX=${{ env.MI_SERVER_PUB_HEX }} ^
-            -DMI_SERVER_SIGN_PUB_HEX=${{ env.MI_SERVER_SIGN_PUB_HEX }} ^
-            -DMI_SERVER_SIGN_PRIV_HEX=${{ env.MI_SERVER_SIGN_PRIV_HEX }} ^
-            -DMI_CERT_PEM_B64=${{ env.MI_CERT_PEM_B64 }} ^
-            -DMI_CERT_KEY_PEM_B64=${{ env.MI_CERT_KEY_PEM_B64 }} ^
-            -DMI_REQUIRE_KEYS=ON
         shell: bash
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ env.CMAKE_BUILD_TYPE }} \
+            -DMI_USE_OPENSSL=ON -DMI_USE_KCP=ON -DMI_USE_MYSQL=ON \
+            -DMI_SERVER_PUB_HEX=${{ env.MI_SERVER_PUB_HEX }} \
+            -DMI_SERVER_SIGN_PUB_HEX=${{ env.MI_SERVER_SIGN_PUB_HEX }} \
+            -DMI_SERVER_SIGN_PRIV_HEX=${{ env.MI_SERVER_SIGN_PRIV_HEX }} \
+            -DMI_CERT_PEM_B64=${{ env.MI_CERT_PEM_B64 }} \
+            -DMI_CERT_KEY_PEM_B64=${{ env.MI_CERT_KEY_PEM_B64 }} \
+            -DMI_REQUIRE_KEYS=ON
 
       - name: Build
         run: cmake --build build --config ${{ env.CMAKE_BUILD_TYPE }} --target mi_server_app

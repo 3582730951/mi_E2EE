@@ -6,7 +6,9 @@
 #define MI_DEFAULT_PORT 19999
 
 #if defined(_WIN32)
-#  if defined(MI_BUILD)
+#  if defined(MI_STATIC)
+#    define MI_API
+#  elif defined(MI_BUILD)
 #    define MI_API __declspec(dllexport)
 #  else
 #    define MI_API __declspec(dllimport)

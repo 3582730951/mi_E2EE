@@ -4,6 +4,7 @@ project(mi_e2ee LANGUAGES C CXX)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+add_compile_definitions(MI_STATIC)
 
 option(MI_USE_OPENSSL "Use OpenSSL for AES-GCM and crypto primitives" ON)
 option(MI_USE_KCP "Use real KCP transport if available" OFF)

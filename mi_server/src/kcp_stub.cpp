@@ -49,7 +49,9 @@ bool hex_to_bytes(const char* hex, uint8_t out[32]) {
 }
 
 struct Session {
+#ifdef MI_USE_KCP
     ikcpcb* kcp{nullptr};
+#endif
     sockaddr_in addr{};
 };
 
@@ -115,6 +117,7 @@ bool KCPRelayStart(const KCPConfig& cfg) {
 #endif
     g_net_running.store(true);
     StartRecvLoop();
+#ifdef MI_USE_KCP
     // Tick loop for KCP sessions
     g_tick_thread = std::thread([]() {
         while (g_net_running.load()) {
@@ -130,6 +133,7 @@ bool KCPRelayStart(const KCPConfig& cfg) {
             std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
     });
+#endif
     return true;
 }
 
@@ -212,9 +216,11 @@ void KCPRelayStop() {
     g_peers.clear();
     g_peer_crypto.clear();
     for (auto& kv : g_sessions) {
+#ifdef MI_USE_KCP
         if (kv.second.kcp) {
             ikcp_release(kv.second.kcp);
         }
+#endif
     }
     g_sessions.clear();
 }

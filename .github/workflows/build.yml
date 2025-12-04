@@ -34,8 +34,9 @@ jobs:
       - name: Install deps (Windows)
         if: runner.os == 'Windows'
         run: |
-          choco install openssl cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
-          choco install mysql --version 8.0.33 -y || true
+          choco install openssl --no-progress -y || echo "openssl install skipped"
+          choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' --no-progress -y || echo "cmake already present"
+          choco install mysql --version 8.0.33 --no-progress -y || echo "mysql client skipped"
 
       - name: Generate self-signed cert (PEM, base64)
         shell: bash

@@ -12,6 +12,7 @@
 #include <queue>
 #include <unordered_map>
 #include <array>
+#include <chrono>
 #ifdef MI_USE_KCP
 #include <ikcp.h>
 #endif

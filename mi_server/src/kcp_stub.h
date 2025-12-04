@@ -3,6 +3,13 @@
 #include <stdint.h>
 #include <string>
 
+#if defined(_WIN32)
+#  include <winsock2.h>
+#  include <ws2tcpip.h>
+#else
+#  include <netinet/in.h>
+#endif
+
 struct KCPConfig {
     std::string ip;
     int port;

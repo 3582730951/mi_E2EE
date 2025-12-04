@@ -112,6 +112,9 @@ std::unordered_map<std::string, GroupState> g_groups;
 uint64_t g_replay_floor = 0;
 std::filesystem::path g_replay_file;
 
+// Forward declaration for message unwrap helper
+EncJson unwrap_message_with_honey(const EncBuffer* input, std::unique_ptr<EncHolder>& holder);
+
 bool hex_to_bytes(const char* hex, uint8_t out[32]) {
     if (!hex) return false;
     size_t len = std::strlen(hex);

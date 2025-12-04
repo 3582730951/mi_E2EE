@@ -85,7 +85,7 @@ jobs:
             -DMI_REQUIRE_KEYS=ON
 
       - name: Build
-        run: cmake --build build --config ${{ env.CMAKE_BUILD_TYPE }} --target mi_server_app
+        run: cmake --build build --config ${{ env.CMAKE_BUILD_TYPE }} --target mi_server_app mi_client_e2ee
         shell: bash
 
       - name: Package artifacts (Linux)

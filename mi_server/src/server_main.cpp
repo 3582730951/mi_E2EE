@@ -1,0 +1,91 @@
+#include "mi_server_api.h"
+#include "mi_common.h"
+#include "kcp_stub.h"
+
+#include <chrono>
+#include <cctype>
+#include <filesystem>
+#include <fstream>
+#include <iostream>
+#include <string>
+#include <thread>
+
+struct MySQLConfigIni {
+    std::string host;
+    int port{3306};
+    std::string db;
+    std::string user;
+    std::string passwd;
+};
+
+static std::string trim(const std::string& s) {
+    size_t b = 0;
+    while (b < s.size() && std::isspace(static_cast<unsigned char>(s[b]))) ++b;
+    size_t e = s.size();
+    while (e > b && std::isspace(static_cast<unsigned char>(s[e - 1]))) --e;
+    return s.substr(b, e - b);
+}
+
+static void load_config(const std::filesystem::path& path, MySQLConfigIni& out) {
+    std::ifstream in(path);
+    if (!in.is_open()) return;
+    std::string line;
+    bool in_mysql = false;
+    while (std::getline(in, line)) {
+        line = trim(line);
+        if (line.empty() || line[0] == '#') continue;
+        if (line.front() == '[' && line.back() == ']') {
+            std::string sec = line.substr(1, line.size() - 2);
+            in_mysql = (sec == "mysql");
+            continue;
+        }
+        if (!in_mysql) continue;
+        auto pos = line.find('=');
+        if (pos == std::string::npos) continue;
+        std::string key = trim(line.substr(0, pos));
+        std::string val = trim(line.substr(pos + 1));
+        if (key == "mysql_ip") out.host = val;
+        else if (key == "mysql_port") {
+            try { out.port = std::stoi(val); } catch (...) {}
+        }
+        else if (key == "database") out.db = val;
+        else if (key == "username") out.user = val;
+        else if (key == "passwd") out.passwd = val;
+    }
+}
+
+int main(int argc, char** argv) {
+    ConfigStruct cfg{};
+    cfg.work_dir = ".";
+    cfg.log_level = 0;
+    cfg.enable_hardware_crypto = 0;
+    cfg.server_ip = "0.0.0.0";
+    cfg.server_port = MI_DEFAULT_PORT;
+
+    if (MI_Server_Init(&cfg) != MI_OK) {
+        std::cerr << "MI_Server_Init failed\n";
+        return 1;
+    }
+
+    std::filesystem::path exe_dir = std::filesystem::current_path();
+    if (argc > 0) {
+        std::error_code ec;
+        exe_dir = std::filesystem::absolute(argv[0], ec).parent_path();
+    }
+    std::filesystem::path cfg_path = (argc > 1) ? argv[1] : (exe_dir / "config.ini");
+
+    MySQLConfigIni mycfg;
+    load_config(cfg_path, mycfg);
+    if (!mycfg.host.empty() && !mycfg.db.empty() && !mycfg.user.empty()) {
+        MI_Server_SetMySQLConfig(mycfg.host.c_str(), mycfg.port, mycfg.user.c_str(), mycfg.passwd.c_str(), mycfg.db.c_str());
+        MI_Server_EnableMySQL(1);
+    }
+
+    while (true) {
+        MI_Server_PollKCP();
+        MI_Server_FlushRelay();
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+    MI_Server_Shutdown();
+    return 0;
+}

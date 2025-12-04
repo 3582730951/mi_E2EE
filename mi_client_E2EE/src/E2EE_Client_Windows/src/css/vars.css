@@ -1,0 +1,22 @@
+:root {
+    --accent: #12b7f5;
+    --accent-strong: #0aa0dc;
+    --bg-sidebar: #0f1116;
+    --bg-sidebar-glow: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(0,0,0,0.2));
+    --bg-list: #101820;
+    --bg-chat: #0c131a;
+    --panel-blur: rgba(255,255,255,0.03);
+    --border-light: #1f2a36;
+    --text-primary: #e9edf2;
+    --text-secondary: #9ba7b5;
+    --bubble-me: #12b7f5;
+    --bubble-other: #16202b;
+    --control-red: #ff5c5c;
+    --control-yellow: #f6be4f;
+    --control-green: #26c552;
+    --shadow-soft: 0 12px 40px rgba(0, 0, 0, 0.35);
+    --font-sans: "SF Pro Display", "Helvetica Neue", "Segoe UI", "Microsoft YaHei", sans-serif;
+}
+
+* { box-sizing: border-box; user-select: none; font-family: var(--font-sans); }
+body { margin: 0; padding: 0; overflow: hidden; background: #0a0f14; }

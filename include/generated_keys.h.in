@@ -1,0 +1,8 @@
+#pragma once
+
+// Auto-generated at configure time. Override via CMake cache or env:
+//   -DMI_SERVER_PUB_HEX=... and -DMI_SERVER_SIGN_PUB_HEX=...
+// or environment MI_SERVER_PUB_HEX / MI_SERVER_SIGN_PUB_HEX (64 hex chars each).
+#define MI_BUILTIN_SERVER_PUB_HEX "@MI_SERVER_PUB_HEX@"
+#define MI_BUILTIN_SERVER_SIGN_PUB_HEX "@MI_SERVER_SIGN_PUB_HEX@"
+#define MI_BUILTIN_SERVER_SIGN_PRIV_HEX "@MI_SERVER_SIGN_PRIV_HEX@"

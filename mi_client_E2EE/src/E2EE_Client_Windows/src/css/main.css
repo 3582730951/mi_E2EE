@@ -1,0 +1,139 @@
+body { background: #0a0f14; height: 100vh; display: flex; }
+
+/* 窗口控制栏 - 苹果式圆点 */
+.app-drag-region {
+    position: absolute; top: 0; left: 0; width: 100%; height: 34px;
+    -webkit-app-region: drag; z-index: 9999;
+    display: flex; justify-content: flex-end;
+}
+.window-controls {
+    -webkit-app-region: no-drag; display: flex; gap: 8px; padding: 8px 12px;
+}
+.win-btn {
+    width: 14px; height: 14px; border-radius: 50%;
+    box-shadow: var(--shadow-soft);
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+}
+.win-btn.min { background: var(--control-yellow); }
+.win-btn.max { background: var(--control-green); }
+.win-btn.close { background: var(--control-red); }
+.win-btn::before,
+.win-btn::after {
+    content: "";
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.55);
+    border-radius: 999px;
+}
+.win-btn.min::before { width: 8px; height: 2px; }
+.win-btn.max::before { width: 8px; height: 8px; border: 1.4px solid rgba(0,0,0,0.55); background: transparent; border-radius: 3px; }
+.win-btn.close::before { width: 8px; height: 2px; transform: translate(-50%, -50%) rotate(45deg); }
+.win-btn.close::after { width: 8px; height: 2px; transform: translate(-50%, -50%) rotate(-45deg); }
+
+/* 布局容器 */
+.main-layout { width: 100%; height: 100%; display: flex; }
+
+/* 1. 侧边栏 */
+.sidebar {
+    width: 76px; background: var(--bg-sidebar); color: #fff;
+    background-image: var(--bg-sidebar-glow);
+    display: flex; flex-direction: column; align-items: center; padding-top: 48px;
+}
+.my-avatar { width: 48px; height: 48px; margin-bottom: 24px; cursor: pointer; border-radius: 12px; background: rgba(255,255,255,0.08); }
+.my-avatar img { width: 100%; height: 100%; border-radius: 12px; }
+.nav-icons { flex-grow: 1; display: flex; flex-direction: column; gap: 18px; align-items: center; }
+.nav-item {
+    width: 46px; height: 46px; display: flex; justify-content: center; align-items: center;
+    color: rgba(255,255,255,0.7); font-size: 20px; cursor: pointer; border-radius: 14px;
+    transition: background 0.2s, color 0.2s, transform 0.1s;
+}
+.nav-item:hover { color: #fff; background: rgba(255,255,255,0.12); transform: translateY(-2px); }
+.nav-item.active { color: #fff; background: rgba(18,183,245,0.3); box-shadow: 0 8px 20px rgba(18,183,245,0.25); }
+.bottom-icons { margin-bottom: 24px; }
+
+/* 2. 列表栏 */
+.list-panel {
+    width: 290px; background: var(--bg-list);
+    border-right: 1px solid var(--border-light);
+    display: flex; flex-direction: column;
+    box-shadow: inset -1px 0 0 rgba(0,0,0,0.35);
+}
+.search-bar-container {
+    height: 72px; padding: 34px 12px 12px 12px;
+    display: flex; align-items: center; gap: 10px;
+    backdrop-filter: blur(10px);
+}
+.search-bar {
+    flex-grow: 1; background: rgba(255,255,255,0.05); border-radius: 14px; height: 34px;
+    display: flex; align-items: center; padding: 0 10px; font-size: 12px; color: var(--text-secondary);
+}
+.search-bar input {
+    background: transparent; border: none; outline: none; margin-left: 8px; width: 100%; font-size: 13px; color: var(--text-primary);
+}
+.add-btn {
+    width: 36px; height: 36px; background: var(--accent); color: white;
+    border: none; border-radius: 12px; cursor: pointer; font-size: 18px;
+    box-shadow: var(--shadow-soft);
+}
+
+.session-list { flex-grow: 1; overflow-y: auto; }
+.session-item {
+    height: 72px; display: flex; align-items: center; padding: 0 14px; cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+}
+.session-item:hover { background: rgba(0,0,0,0.03); }
+.session-item.active { background: rgba(18,183,245,0.12); transform: translateY(-2px); }
+.session-avatar { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg,#1d2733,#0f1620); margin-right: 12px; }
+.session-info { flex-grow: 1; overflow: hidden; }
+.session-name { font-size: 15px; margin-bottom: 4px; color: var(--text-primary); font-weight: 600; }
+.session-preview { font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.session-time { font-size: 11px; color: var(--text-secondary); align-self: flex-start; margin-top: 18px; }
+
+/* 3. 聊天面板 */
+.chat-panel { flex-grow: 1; background: var(--bg-chat); display: flex; flex-direction: column; backdrop-filter: blur(10px); }
+.chat-header {
+    height: 68px; border-bottom: 1px solid var(--border-light);
+    display: flex; justify-content: space-between; align-items: center; padding: 24px 20px 0 20px;
+    background: linear-gradient(180deg, rgba(23,30,40,0.9), rgba(15,20,28,0.9));
+}
+.chat-title { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+.chat-options { color: var(--text-secondary); cursor: pointer; }
+
+.chat-messages { flex-grow: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
+
+/* 消息气泡样式 */
+.msg-row { display: flex; align-items: flex-end; gap: 6px; }
+.msg-row.me { flex-direction: row-reverse; }
+.msg-avatar-img { width: 36px; height: 36px; border-radius: 10px; background: #d8d8d8; }
+.msg-content {
+    max-width: 70%; padding: 12px 14px; border-radius: 18px;
+    font-size: 14px; line-height: 1.6; position: relative;
+    box-shadow: var(--shadow-soft); background: var(--bubble-other); color: var(--text-primary);
+}
+.msg-row.me .msg-content { background: var(--bubble-me); color: white; }
+.msg-row.other .msg-content { background: rgba(255,255,255,0.94); }
+
+/* 输入区域 */
+.chat-input-area {
+    height: 190px; border-top: 1px solid var(--border-light); background: var(--panel-blur);
+    display: flex; flex-direction: column; padding: 12px 18px; gap: 10px;
+    backdrop-filter: blur(14px);
+}
+.toolbar { display: flex; gap: 18px; font-size: 18px; color: var(--text-secondary); }
+.toolbar i { cursor: pointer; }
+.toolbar i:hover { color: var(--accent); }
+
+#msg-input {
+    flex-grow: 1; border: none; outline: none; resize: none; font-size: 14px; padding: 8px;
+    border-radius: 10px; background: rgba(0,0,0,0.03);
+}
+.send-actions { text-align: right; }
+#send-btn {
+    padding: 8px 26px; background: var(--accent); color: white;
+    border: none; border-radius: 12px; cursor: pointer; font-size: 14px; font-weight: 600;
+    box-shadow: var(--shadow-soft);
+    transition: transform 0.1s, background 0.1s;
+}
+#send-btn:hover { background: var(--accent-strong); transform: translateY(-1px); }

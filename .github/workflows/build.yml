@@ -1,0 +1,71 @@
+name: build
+
+on:
+  push:
+  pull_request:
+
+env:
+  CMAKE_BUILD_TYPE: Release
+  MI_SERVER_PUB_HEX: ${{ secrets.MI_SERVER_PUB_HEX }}
+  MI_SERVER_SIGN_PUB_HEX: ${{ secrets.MI_SERVER_SIGN_PUB_HEX }}
+  MI_SERVER_SIGN_PRIV_HEX: ${{ secrets.MI_SERVER_SIGN_PRIV_HEX }}
+  MI_DEFAULT_IP: 127.0.0.1
+  MI_DEFAULT_PORT: 19999
+
+jobs:
+  cmake:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deps (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake libssl-dev libmysqlclient-dev git
+          # build ikcp from source
+          git clone https://github.com/skywind3000/kcp.git /tmp/kcp
+          pushd /tmp/kcp && mkdir -p build && cd build && cmake .. && cmake --build . --config Release && sudo cmake --install . && popd
+
+      - name: Install deps (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          choco install openssl cmake --installargs 'ADD_CMAKE_TO_PATH=System' -y
+          choco install mysql --version 8.0.33 -y || true
+
+      - name: Generate self-signed cert (PEM, base64)
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            export PATH="/c/Program Files/OpenSSL-Win64/bin:$PATH"
+          fi
+          openssl req -x509 -newkey rsa:2048 -sha256 -days 365 -nodes \
+            -subj "/CN=mi-e2ee/O=MI/OU=CI" \
+            -keyout cert.key -out cert.pem
+          python - <<'PY' > cert.env
+import base64, pathlib
+pem = pathlib.Path("cert.pem").read_bytes()
+key = pathlib.Path("cert.key").read_bytes()
+print(f"MI_CERT_PEM_B64={base64.b64encode(pem).decode()}")
+print(f"MI_CERT_KEY_PEM_B64={base64.b64encode(key).decode()}")
+PY
+          cat cert.env >> "$GITHUB_ENV"
+
+      - name: Configure
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=${{ env.CMAKE_BUILD_TYPE }} ^
+            -DMI_USE_OPENSSL=ON -DMI_USE_KCP=ON -DMI_USE_MYSQL=ON ^
+            -DMI_SERVER_PUB_HEX=${{ env.MI_SERVER_PUB_HEX }} ^
+            -DMI_SERVER_SIGN_PUB_HEX=${{ env.MI_SERVER_SIGN_PUB_HEX }} ^
+            -DMI_SERVER_SIGN_PRIV_HEX=${{ env.MI_SERVER_SIGN_PRIV_HEX }} ^
+            -DMI_CERT_PEM_B64=${{ env.MI_CERT_PEM_B64 }} ^
+            -DMI_CERT_KEY_PEM_B64=${{ env.MI_CERT_KEY_PEM_B64 }} ^
+            -DMI_REQUIRE_KEYS=ON
+        shell: bash
+
+      - name: Build
+        run: cmake --build build --config ${{ env.CMAKE_BUILD_TYPE }} --target mi_server_app
+        shell: bash

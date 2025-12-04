@@ -1,0 +1,6 @@
+#pragma once
+
+// Auto-generated self-signed certificate/key (base64-encoded PEM) at configure time.
+// Populated in CI; can be overridden with -DMI_CERT_PEM_B64=... and -DMI_CERT_KEY_PEM_B64=...
+#define MI_BUILTIN_CERT_PEM_B64 "@MI_CERT_PEM_B64@"
+#define MI_BUILTIN_CERT_KEY_PEM_B64 "@MI_CERT_KEY_PEM_B64@"

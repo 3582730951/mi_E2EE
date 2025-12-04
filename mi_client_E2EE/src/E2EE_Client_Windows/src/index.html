@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="css/vars.css">
+    <link rel="stylesheet" href="css/main.css">
+    <!-- 同样假设 font-awesome 已存在 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"> 
+    <title>Mi E2EE</title>
+</head>
+<body>
+    <div class="app-drag-region">
+        <div class="window-controls">
+            <div class="win-btn min" id="win-min"></div>
+            <div class="win-btn max" id="win-max"></div>
+            <div class="win-btn close" id="win-close"></div>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <!-- 侧边栏 -->
+        <div class="sidebar">
+            <div class="my-avatar"></div>
+            <div class="nav-icons">
+                <div class="nav-item active"><i class="fas fa-comment"></i></div>
+                <div class="nav-item"><i class="fas fa-user"></i></div>
+                <div class="nav-item"><i class="fas fa-folder"></i></div>
+            </div>
+            <div class="bottom-icons"><div class="nav-item"><i class="fas fa-bars"></i></div></div>
+        </div>
+
+        <!-- 会话列表 -->
+        <div class="list-panel">
+            <div class="search-bar-container">
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="搜索">
+                </div>
+                <button class="add-btn">+</button>
+            </div>
+            <div class="session-list" id="session-list"></div>
+        </div>
+
+        <!-- 聊天区域 -->
+        <div class="chat-panel">
+            <div class="chat-header">
+                <div class="chat-title" id="chat-title">未选择会话</div>
+                <div class="chat-options"><i class="fas fa-ellipsis-h"></i></div>
+            </div>
+            <div class="chat-messages" id="message-container">
+                <div class="empty-tip">请选择一个联系人开始加密聊天</div>
+            </div>
+            <div class="chat-input-area">
+                <div class="toolbar">
+                    <i class="far fa-smile"></i>
+                    <i class="far fa-image"></i>
+                    <i class="far fa-folder" id="btn-send-file" title="发送文件(并安全擦除)"></i>
+                    <i class="fas fa-cut"></i>
+                </div>
+                <textarea id="msg-input" placeholder="输入消息..."></textarea>
+                <div class="send-actions">
+                    <button id="send-btn">发送(S)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="js/main_renderer.js"></script>
+</body>
+</html>
+

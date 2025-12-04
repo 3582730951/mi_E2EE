@@ -1,0 +1,66 @@
+filename: Front-end_requirements.txt
+version: 2.0 (Revised based on Security & Architecture Review)
+update: 2.1 (Enc 接入 + KCP 收发钩子)
+
+[N-API Bridge / Middleware 需求]
+说明：由于 Electron 无法直接操作 C++ 的 EncryptedBasicTypes 内存布局，
+Codex 必须提供一个 `mi_bridge.node` (或提供源码由前端编译) 作为中间层。
+
+1. 基础生命周期 (Lifecycle)
+------------------------------------------------
+- JS接口: const mi = require('mi_bridge');
+- C++映射:
+  - mi.init(storagePath: string) -> 调用 MI_Init(ToEncString(path))
+  - mi.shutdown() -> 调用 MI_Shutdown()
+  - mi.getKCPStatus() -> 返回 int (映射 MI_KCPState: 0/1/2)
+  - mi.setRawSend(fn: (Uint8Array)=>bool), mi.setRawReceive(fn: (Uint8Array)=>void) 供外部 KCP socket 挂接
+
+2. 认证与安全 (Auth)
+------------------------------------------------
+- JS接口: mi.login(username: string, pass_aes256: string) -> Promise<bool>
+- 内部逻辑:
+  1. 接收 JS string (UTF-8)
+  2. 调用 MI_CreateEncString() 将明文转换为 EncString
+  3. 调用 MI_Login(enc_user, enc_pass)
+  4. 销毁临时的 EncString 对象 (内存安全)
+  5. 返回结果
+
+3. 消息发送 (Message Send)
+------------------------------------------------
+- JS接口: mi.sendMessage(targetId: string, content: string) -> bool
+- 内部逻辑:
+  1. 转封装: 明文 -> EncString
+  2. 构造 EncJson (Stub中定义的 A-wrapper 结构)
+  3. 调用 MI_SendMessage(enc_json)
+ 4. 收到 message/file 后自动向服务器发送 ACK（无需前端额外操作）
+
+4. 文件操作 (File Operations)
+------------------------------------------------
+- JS接口: mi.sendFile(targetId: string, filePath: string)
+- 内部逻辑:
+  1. 验证文件存在
+  2. 切片处理 (Chunking) - *Codex 需在中间层实现*
+  3. 循环调用 MI_SendFile 传输数据块
+  
+- JS接口: mi.secureDelete(filePath: string)
+- 内部逻辑: 
+  1. 暴露 common/file_ops.cpp 中的 SecureEraseFile 函数
+  2. 包装为 MI_SecureEraseFile(path) 供调用
+
+5. 回调通知机制 (Callback Registration)
+------------------------------------------------
+*后端目前缺失，必须新增*
+- JS接口: mi.on('message', (from, content, time) => { ... })
+- Bridge层需求:
+  - 需实现一个轮询线程 (Polling Loop) 或 异步监听器 (uv_async)。
+  - 当 C++ 层收到 MI_OnMessageReceived 时，触发 JS 回调函数。
+  - 必须解密后 (DecodeEncString) 再传回给 JS 前端展示。
+  - 如果 setRawReceive 已绑定外部 socket，JS 需将收到的原始 UDP/KCP 数据传入以触发解包。
+
+6. 导出函数清单 (对于 Bridge 开发者)
+------------------------------------------------
+请确保暴露以下 Helper 函数供 Bridge 内部使用，或直接集成在 Bridge 中：
+- MI_CreateEncString(const char* raw) -> EncString*
+- MI_DecodeEncString(EncString* enc) -> char* (使用后立即销毁)
+- MI_RegisterMsgCallback(void (*cb)(...))
+- MI_SetRawSend, MI_SetRawReceive 用于自定义 KCP socket

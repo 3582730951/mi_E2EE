@@ -1,0 +1,21 @@
+# Build outputs
+/build/
+/dist/
+/out/
+/cmake-build-*/
+
+# Frontend installs
+/node_modules/
+
+# Local config and certs (should never be committed)
+*.pem
+*.crt
+*.key
+*.p12
+/include/generated_keys.h
+/include/generated_cert.h
+
+# Editor/OS noise
+*.swp
+*.swo
+*.DS_Store

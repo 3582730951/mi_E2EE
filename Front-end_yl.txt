@@ -1,0 +1,18 @@
+filename: Front-end_yl.txt
+
+# 开发依赖 (DevDependencies)
+electron: ^28.0.0
+electron-builder: ^24.9.0 (用于打包 Windows exe)
+sass: ^1.69.0 (样式预处理)
+eslint: ^8.50.0 (微软代码规范检查)
+
+# 运行时依赖 (Dependencies)
+vue: ^3.3.0 (MVVM 框架，用于复杂状态管理)
+pinia: ^2.1.0 (状态存储)
+ffi-napi: ^4.0.3 (用于调用 Codex 的 .dll)
+ref-napi: ^3.0.3 (C++ 类型映射)
+ref-struct-napi: ^1.1.1 (C++ 结构体映射)
+注意：Electron 端优先通过 N-API `mi_bridge` 调用，ffi 仅保留兼容；接入 Enc 类型需使用 mi_bridge 封装（MI_CreateEncString/Json），rawSend/rawReceive 可用来自定义 KCP socket，日志禁止打印明文/密钥，仅输出指纹和长度。
+
+# UI 资源
+font-awesome: (SVG 图标集，本地化部署，不依赖 CDN)

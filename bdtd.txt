@@ -1,0 +1,171 @@
+========================================
+bdtd.txt —— 后端业务接口文档（Codex）
+版本：v1.1
+说明：本文件定义 mi_server / mi_client_E2EE 的 DLL/SO 对前端开放的接口。禁止在未经版本号更新的情况下随意修改。
+========================================
+
+# 目录
+1. 总体说明与依赖
+2. 初始化与全局环境 API
+3. 认证与身份绑定 API
+4. KCP 通道管理 API（含握手）
+5. 密钥与加密 API（含 A.json 蜜罐封装）
+6. 消息收发 API（私聊 / 群聊）
+7. 文件传输与擦除 API
+8. 聊天记录与本地存储 API
+9. 群组管理 API
+10. 用户与联系人 API
+11. 服务器面板 API（mi_server）
+12. 错误码定义
+13. DLL/SO 初始化顺序
+14. 结构体与 Enc 基础类型约定（含加密 int/long/string/json）
+15. 日志、安全与性能要求
+16. 构建期注入与 CI 要求
+17. 服务器转发与离线缓存 API
+
+----------------------------------------
+# 1. 总体说明与依赖
+----------------------------------------
+- 目标平台：Windows / Linux / Android；导出为 DLL（Win）/ SO（Linux/Android）。
+- 默认开发端点：127.0.0.1:19999，实际发布由编译期注入。
+- 依赖：OpenSSL（AES-256-GCM、ECDH）、KCP、MySQL C API、平台随机源（/dev/urandom、BCryptGenRandom）。
+- 前端禁止直接使用明文类型，必须通过 Enc* 类型交互。
+
+----------------------------------------
+# 2. 初始化与全局环境 API
+----------------------------------------
+## 2.1 int MI_Init(const ConfigStruct* cfg);
+- 说明：初始化运行环境；必须在 UI 启动前调用。
+- 参数：工作目录、日志等级、是否启用硬件加密、默认服务器 IP/端口。
+- 返回：0 成功；非 0 参见错误码。
+
+## 2.2 void MI_Shutdown();
+- 说明：释放全部资源，退出前调用。
+
+----------------------------------------
+# 3. 认证与身份绑定 API
+----------------------------------------
+## 3.1 int MI_Login(const EncString username, const EncString aes256_encrypted_password);
+- 流程：前端提交 AES-256 密文；后端解密 -> 与 MySQL 存储的 SHA-256 比对。
+- 返回：0 成功；1001 用户不存在；1002 密码错误；1003 网络/服务器异常。
+
+## 3.2 int MI_RequestUserPublicKey(const EncString username, Out PublicKey* key);
+- 说明：获取目标公钥以发起端到端加密。
+
+----------------------------------------
+# 4. KCP 通道管理 API（含握手）
+----------------------------------------
+## 4.1 int MI_KCP_Connect(const EncString server_ip, int port);
+## 4.2 int MI_KCP_Disconnect();
+## 4.3 int MI_KCP_Status(); // 已连接/断开/握手中
+握手要求：
+- 客户端发起带一次性随机数与客户端公钥的 SYN。
+- 服务器回传随机数回显 + 服务端公钥 + 签名，客户端校验签名。
+- KCP 会话密钥由 ECDH 导出并用于白盒 AES-256-GCM 包装。
+
+----------------------------------------
+# 5. 密钥与加密 API（含 A.json 蜜罐封装）
+----------------------------------------
+## 5.1 int MI_EncryptMessage(const EncJson* input, EncBuffer* output);
+- 双层封装：真实 JSON → 内层 AES-256-GCM（对端公钥导出的会话密钥）→ 封装 A.json（username/ip_port/strings 蜜罐字段等长随机密文，带时间戳、随机数、发信人公钥、签名）→ 外层 AES-256-GCM（会话密钥/群密钥）。
+
+## 5.2 int MI_DecryptMessage(const EncBuffer* input, EncJson* output);
+- 步骤：解密外层 AES-256-GCM → 解析 A.json → 校验发信人公钥/签名/时间戳窗口 → 解密内层取出真实 JSON。
+
+## 5.3 int MI_GenerateEphemeralKey(PublicKey* pub, PrivateKey* priv);
+- 用于一次性会话；私钥仅驻留内存。
+
+----------------------------------------
+# 6. 消息收发 API（私聊 / 群聊）
+----------------------------------------
+## 6.1 int MI_SendMessage(const EncString target_username, const EncJson message_content);
+## 6.2 int MI_OnMessageReceived(EncJson* out_message);
+- 要求：所有消息经过 MI_EncryptMessage；接收端必须校验发信人公钥与时间戳窗口。
+
+----------------------------------------
+# 7. 文件传输与擦除 API
+----------------------------------------
+## 7.1 int MI_SendFile(const EncString target_username, const FileDescriptor* file);
+## 7.2 int MI_OnFileReceived(FileDescriptor* file);
+- 上传前本地加密；群聊中当 100% 目标均确认收到后擦除本地缓存：大文件按头/中/尾写 0xFF 后删除，小文件直接 0xFF 覆盖删除。
+
+----------------------------------------
+# 8. 聊天记录与本地存储 API
+----------------------------------------
+## 8.1 int MI_SaveLocalHistory(const EncJson message);
+## 8.2 int MI_LoadLocalHistory(const EncString target, EncJsonList* out_list);
+- 格式：自研加密封装，禁用明文存储；加载后需立即覆盖明文缓冲。
+
+----------------------------------------
+# 9. 群组管理 API
+----------------------------------------
+## 9.1 int MI_GetGroupKey(const EncString group_id, GroupKey* out);
+## 9.2 int MI_SendGroupMessage(const EncString group_id, const EncJson message);
+- 群聊使用群主分发的群密钥 + 成员公钥做包内签名；支持成员滚动更新密钥。
+
+----------------------------------------
+# 10. 用户与联系人 API
+----------------------------------------
+## 10.1 int MI_GetUserInfo(const EncString username, UserInfo* out);
+- 不返回敏感信息，只包含展示字段及公钥指纹。
+
+----------------------------------------
+# 11. 服务器面板 API（mi_server）
+----------------------------------------
+## 11.1 int MI_Server_AddUser(const UserInfo* user);
+## 11.2 int MI_Server_RemoveUser(const EncString username);
+## 11.3 int MI_Server_ListSessions(SessionList* out);
+- 仅服务器面板可用；需管理员签名令牌。
+
+----------------------------------------
+# 12. 错误码定义
+----------------------------------------
+0000 成功
+1001 用户不存在
+1002 密码错误
+1003 服务器/KCP 不可用
+2001 加密失败
+2002 解密失败
+2003 公钥无效/不匹配
+3001 KCP 通道断开
+3002 握手签名校验失败
+4001 文件加密失败
+4002 文件擦除失败
+5001 本地存储读写失败
+9001 配置不合法
+
+----------------------------------------
+# 13. DLL/SO 初始化顺序
+----------------------------------------
+MI_Init(cfg) → 加载 Enc 基础类型 → 加载/生成密钥 → KCP 握手 → MI_Login → UI 初始化 → 开始收发。
+
+----------------------------------------
+# 14. 结构体与 Enc 基础类型约定
+----------------------------------------
+- EncString/EncInt/EncJson/EncBuffer：含长度、随机盐、加密方式编号、随机打散布局（见《EncryptedBasicTypes.md》）。
+- EncInt/EncLong：支持 16 种字节顺序布局 + 4B 掩码，调用 MI_CreateEncInt32/MI_DecodeEncInt32、MI_CreateEncLong/MI_DecodeEncLong。
+- PublicKey/PrivateKey：256 bit；禁止写盘。
+- FileDescriptor：路径、大小、哈希、是否已加密、是否已确认送达。
+- 所有结构体必须对齐一致（4/8 字节）以保证跨平台。
+
+----------------------------------------
+# 15. 日志、安全与性能要求
+----------------------------------------
+- 禁止日志打印明文或密钥；允许打印指纹与长度信息。
+- 客户端假定服务器不可信：所有消息需签名 + 双层加密；必须绑定用户名和公钥指纹。
+- UI 与业务解耦：所有 API 通过异步封装，UI 不缓存明文。
+- 性能优先：默认 Release 构建；热点路径尽量避免频繁解密，对短生命周期明文立即覆写。
+
+----------------------------------------
+# 16. 构建期注入与 CI 要求
+----------------------------------------
+- 通过 CMake 变量或环境注入服务器 IP/端口、公钥/签名公钥/签名私钥（64 hex），MI_REQUIRE_KEYS=ON 时缺失即失败。
+- GitHub Actions 需先拉取依赖（OpenSSL/KCP/MySQL），再配置密钥与证书，最后构建 DLL/SO；禁止输出证书/密钥文件，必须内嵌到编译产物或构建时常量。
+
+----------------------------------------
+# 17. 服务器转发与离线缓存 API
+----------------------------------------
+- MI_Server_RelayEnqueue(target, packet): 将已加密封包排队等待投递。
+- MI_Server_RelayDequeue(target, out_packet): 拉取一个待发包（调用方应通过 KCP 发给目标）。
+- MI_Server_RelayPendingCount(target, out_count): 查询待发包数量。
+- MI_Server_RelayMarkDelivered(target): 目标确认收齐后，将缓存覆盖 0xFF 并移除，满足“收齐后擦除”要求。

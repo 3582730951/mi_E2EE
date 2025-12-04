@@ -1,0 +1,137 @@
+========================================
+bdtd.txt —— 后端业务接口文档（Codex）
+版本：v1.0
+说明：本文件定义所有后端 DLL/SO 模块对前端开放的接口，必须稳定、不可随意修改。
+========================================
+
+# 目录
+1. 初始化与全局环境 API
+2. 登录与认证 API
+3. KCP 通道管理 API
+4. 加密与密钥管理 API
+5. 消息收发 API（私聊 / 群聊）
+6. 文件传输 API
+7. 聊天记录与本地存储 API
+8. 群组管理 API
+9. 用户信息与联系人 API
+10. 服务器端管理 API（mi_server 面板使用）
+11. 错误码定义
+12. DLL/SO 初始化顺序
+13. 内部使用结构体说明（仅前端调用所需）
+
+----------------------------------------
+# 1. 初始化与全局环境 API
+----------------------------------------
+## 1.1 int MI_Init(ConfigStruct* cfg);
+说明：初始化整个后端运行环境，必须在 UI 初始化前调用。
+参数：
+    cfg → 包含平台信息、工作目录、日志等级、是否启用硬件加密等
+返回：
+    0 = 成功
+    非0 = 参见错误码
+
+## 1.2 void MI_Shutdown();
+说明：释放全部资源，退出前调用。
+
+----------------------------------------
+# 2. 登录与认证 API
+----------------------------------------
+## 2.1 int MI_Login(const EncString username, const EncString aes256_encrypted_password);
+流程：
+    - 前端提交 AES-256 加密后的密码
+    - 后端将明文 hash 与数据库存储的 SHA-256 进行比对
+返回：
+    0 = 成功
+    1001 = 用户不存在
+    1002 = 密码错误
+    1003 = 网络/服务器不可用
+
+## 2.2 int MI_RequestUserPublicKey(const EncString username, Out PublicKey* key);
+
+----------------------------------------
+# 3. KCP 通道管理 API
+----------------------------------------
+## 3.1 int MI_KCP_Connect(const EncString server_ip, int port);
+## 3.2 int MI_KCP_Disconnect();
+## 3.3 int MI_KCP_Status();   // 返回已连接/断开/握手中
+
+----------------------------------------
+# 4. 加密与密钥管理 API
+----------------------------------------
+## 4.1 int MI_EncryptMessage(EncJson* input, EncBuffer* output);
+## 4.2 int MI_DecryptMessage(EncBuffer* input, EncJson* output);
+
+说明：
+    - 封装 A.json + 内层真实 JSON
+    - 包含蜜罐字段填充
+    - 使用白盒 AES-256-GCM
+
+----------------------------------------
+# 5. 消息收发 API
+----------------------------------------
+## 5.1 int MI_SendMessage(const EncString target_username, const EncJson message_content);
+## 5.2 int MI_OnMessageReceived(EncJson* out_message);
+
+----------------------------------------
+# 6. 文件传输 API
+----------------------------------------
+## 6.1 int MI_SendFile(const EncString target_username, FileDescriptor* file);
+## 6.2 int MI_OnFileReceived(FileDescriptor* file);
+
+说明：
+    - 文件必须本地加密再上传
+    - 客户端自行维护去重（群聊 30 人全部收到即擦除）
+
+----------------------------------------
+# 7. 聊天记录与本地存储 API
+----------------------------------------
+## 7.1 int MI_SaveLocalHistory(const EncJson message);
+## 7.2 int MI_LoadLocalHistory(const EncString target, EncJsonList* out_list);
+
+本地文件格式必须为自开发格式，且加密。
+
+----------------------------------------
+# 8. 群组管理 API
+----------------------------------------
+## 8.1 int MI_GetGroupKey(const EncString group_id, GroupKey* out);
+## 8.2 int MI_SendGroupMessage(const EncString group_id, const EncJson message);
+
+----------------------------------------
+# 9. 用户信息与联系人 API
+----------------------------------------
+## 9.1 int MI_GetUserInfo(const EncString username, UserInfo* out);
+
+----------------------------------------
+# 10. 服务器端管理 API（mi_server）
+----------------------------------------
+## 10.1 int MI_Server_AddUser(UserInfo* user);
+## 10.2 int MI_Server_RemoveUser(const EncString username);
+
+----------------------------------------
+# 11. 错误码定义
+----------------------------------------
+0000 成功
+1001 用户不存在
+1002 密码错误
+1003 无法连接服务器
+2001 加密失败
+2002 解密失败
+3001 KCP 通道断开
+...
+
+----------------------------------------
+# 12. DLL/SO 初始化顺序
+----------------------------------------
+MI_Init() → 加载加密基础类型 → 加载密钥 → KCP 握手 → UI 初始化
+
+----------------------------------------
+# 13. 内部结构体说明
+----------------------------------------
+EncString:
+    - 加密后的字符串结构体（长度 + 随机盐 + 加密类型编号）
+PublicKey: 
+    - 256bit 公钥结构
+EncJson:
+    - 加密 JSON 数据块
+FileDescriptor:
+    - 文件路径 / 加密标识 / 本地是否保存

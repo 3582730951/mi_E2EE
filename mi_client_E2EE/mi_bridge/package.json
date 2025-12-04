@@ -1,0 +1,9 @@
+{
+  "name": "mi_bridge",
+  "version": "0.1.0",
+  "private": true,
+  "gypfile": true,
+  "dependencies": {
+    "node-addon-api": "^7.0.0"
+  }
+}

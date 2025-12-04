@@ -12,6 +12,9 @@
 #include <queue>
 #include <unordered_map>
 #include <array>
+#ifdef MI_USE_KCP
+#include <ikcp.h>
+#endif
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -84,6 +87,8 @@ static std::mutex g_send_mu;
 static std::unordered_map<std::string, Session> g_sessions;
 static std::thread g_tick_thread;
 static std::unordered_map<std::string, PeerCrypto> g_peer_crypto;
+
+static void StartRecvLoop();
 
 bool KCPRelayStart(const KCPConfig& cfg) {
     if (g_sock >= 0) return true;

@@ -3,6 +3,7 @@
 #include "hmac.h"
 
 #include <array>
+#include <cstring>
 #include <random>
 #include <sstream>
 

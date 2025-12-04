@@ -90,6 +90,17 @@ jobs:
         run: cmake --build build --config ${{ env.CMAKE_BUILD_TYPE }} --target mi_server_app mi_client_e2ee
         shell: bash
 
+      - name: Build Electron client (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        working-directory: mi_client_E2EE/src/E2EE_Client_Windows
+        run: |
+          npm install --no-fund --no-audit
+          npm run build
+          if (Test-Path dist) {
+            Compress-Archive -Path dist\* -DestinationPath ..\..\..\dist\client-electron-windows.zip -Force
+          }
+
       - name: Package artifacts (Linux)
         if: runner.os == 'Linux'
         shell: bash
@@ -126,4 +137,12 @@ jobs:
         with:
           name: client-${{ matrix.os }}
           path: client-${{ matrix.os }}.zip
+        if: always()
+
+      - name: Upload electron client (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-electron-windows
+          path: dist/client-electron-windows.zip
         if: always()

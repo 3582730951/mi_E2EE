@@ -3,6 +3,7 @@ name: build
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 env:
   CMAKE_BUILD_TYPE: Release
@@ -53,6 +54,22 @@ print(f"MI_CERT_PEM_B64={base64.b64encode(pem).decode()}")
 print(f"MI_CERT_KEY_PEM_B64={base64.b64encode(key).decode()}")
 PY
           cat cert.env >> "$GITHUB_ENV"
+
+      - name: Bootstrap server keys when secrets are empty
+        shell: bash
+        run: |
+          python - <<'PY' > keys.env
+import os, secrets, pathlib
+names = ["MI_SERVER_PUB_HEX", "MI_SERVER_SIGN_PUB_HEX", "MI_SERVER_SIGN_PRIV_HEX"]
+env = {}
+for n in names:
+    v = os.environ.get(n, "").strip()
+    if not v:
+        v = secrets.token_hex(32)
+    env[n] = v
+pathlib.Path("keys.env").write_text("".join(f"{k}={v}\n" for k,v in env.items()), encoding="utf-8")
+PY
+          cat keys.env >> "$GITHUB_ENV"
 
       - name: Configure
         shell: bash

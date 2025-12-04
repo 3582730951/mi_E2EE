@@ -87,3 +87,41 @@ jobs:
       - name: Build
         run: cmake --build build --config ${{ env.CMAKE_BUILD_TYPE }} --target mi_server_app
         shell: bash
+
+      - name: Package artifacts (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        env:
+          ART_OS: ${{ matrix.os }}
+        run: |
+          mkdir -p dist/server dist/client
+          find build -type f \( -name "mi_server_app" -o -name "libmi_server.a" -o -name "mi_server_app*" \) -exec cp {} dist/server/ \; || true
+          find build -type f \( -name "libmi_client_e2ee.a" -o -name "mi_client_e2ee.a" -o -name "libmi_client_e2ee.so" \) -exec cp {} dist/client/ \; || true
+          if ls dist/server/* >/dev/null 2>&1; then zip -jr "server-${ART_OS}.zip" dist/server/*; else echo "no server artifacts"; fi
+          if ls dist/client/* >/dev/null 2>&1; then zip -jr "client-${ART_OS}.zip" dist/client/*; else echo "no client artifacts"; fi
+
+      - name: Package artifacts (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          ART_OS: ${{ matrix.os }}
+        run: |
+          New-Item -ItemType Directory -Force -Path dist/server,dist/client | Out-Null
+          Get-ChildItem build -Recurse -Include mi_server_app.exe,mi_server.lib,libmi_server.a | ForEach-Object { Copy-Item $_.FullName dist/server -Force }
+          Get-ChildItem build -Recurse -Include mi_client_e2ee.lib,libmi_client_e2ee.a | ForEach-Object { Copy-Item $_.FullName dist/client -Force }
+          if (Test-Path dist/server\*) { Compress-Archive -Path dist/server\* -DestinationPath ("server-" + $env:ART_OS + ".zip") -Force } else { Write-Host "no server artifacts"; }
+          if (Test-Path dist/client\*) { Compress-Archive -Path dist/client\* -DestinationPath ("client-" + $env:ART_OS + ".zip") -Force } else { Write-Host "no client artifacts"; }
+
+      - name: Upload server artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-${{ matrix.os }}
+          path: server-${{ matrix.os }}.zip
+        if: always()
+
+      - name: Upload client artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-${{ matrix.os }}
+          path: client-${{ matrix.os }}.zip
+        if: always()

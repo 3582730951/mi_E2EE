@@ -9,11 +9,20 @@
 #include <vector>
 
 #include "mysql_stub.h"
+#include "kcp_stub.h"
 #include "generated_keys.h"
 #include "../../common/crypto_stub.h"
 #include "../../common/sha256.h"
 
 namespace {
+
+enum PacketType : uint8_t {
+    PACKET_MESSAGE = 1,
+    PACKET_FILE_CHUNK = 2,
+    PACKET_AUTH = 3,
+    PACKET_AUTH_ACK = 4,
+    PACKET_ACK = 5
+};
 
 struct ServerState {
     bool initialized{false};

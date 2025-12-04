@@ -42,6 +42,7 @@ jobs:
         run: |
           if [ "$RUNNER_OS" = "Windows" ]; then
             export PATH="/c/Program Files/OpenSSL-Win64/bin:$PATH"
+            export MSYS2_ARG_CONV_EXCL="*"
           fi
           openssl req -x509 -newkey rsa:2048 -sha256 -days 365 -nodes \
             -subj "/CN=mi-e2ee/O=MI/OU=CI" \

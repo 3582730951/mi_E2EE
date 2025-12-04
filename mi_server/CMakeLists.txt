@@ -11,6 +11,10 @@ target_include_directories(mi_server
 )
 
 target_link_libraries(mi_server PUBLIC mi_common mi_internal)
+if(MI_USE_KCP AND KCP_LIBRARY)
+    target_link_libraries(mi_server PUBLIC ${KCP_LIBRARY})
+    target_include_directories(mi_server PRIVATE ${KCP_INCLUDE_DIR})
+endif()
 target_compile_definitions(mi_server PRIVATE MI_BUILD)
 
 add_executable(mi_server_app

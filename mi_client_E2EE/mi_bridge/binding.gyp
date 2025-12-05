@@ -4,7 +4,7 @@
       "target_name": "mi_bridge",
       "sources": [ "src/addon.cpp" ],
       "include_dirs": [
-        "<!(node -p \"require('node-addon-api').include\")",
+        "<!@(node -p \"require('node-addon-api').include\")",
         "../include",
         "../../include",
         "../../common"

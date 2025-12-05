@@ -14,6 +14,9 @@ namespace {
 
 ConfigStruct g_cfg{};
 Napi::ThreadSafeFunction g_msg_tsfn;
+Napi::FunctionReference g_raw_send_ref;
+Napi::FunctionReference g_raw_recv_ref;
+std::string g_workdir;
 
 std::string EncJsonToString(const EncJson* enc) {
     if (!enc || !enc->data || enc->len == 0) return {};
@@ -55,8 +58,8 @@ Napi::Value Init(const Napi::CallbackInfo& info) {
         Napi::TypeError::New(env, "storagePath required").ThrowAsJavaScriptException();
         return env.Null();
     }
-    std::string path = info[0].As<Napi::String>();
-    g_cfg.work_dir = path.c_str();
+    g_workdir = info[0].As<Napi::String>().Utf8Value();
+    g_cfg.work_dir = g_workdir.c_str();
     g_cfg.log_level = 0;
     g_cfg.enable_hardware_crypto = 0;
     g_cfg.server_ip = "127.0.0.1";
@@ -78,7 +81,7 @@ Napi::Value GetStatus(const Napi::CallbackInfo& info) {
 
 Napi::Value Connect(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
-    std::string ip = info.Length() > 0 && info[0].IsString() ? info[0].As<Napi::String>() : "127.0.0.1";
+    std::string ip = (info.Length() > 0 && info[0].IsString()) ? info[0].As<Napi::String>().Utf8Value() : std::string("127.0.0.1");
     int port = info.Length() > 1 && info[1].IsNumber() ? info[1].As<Napi::Number>().Int32Value() : MI_DEFAULT_PORT;
     EncString ip_enc = MakeEncString(ip);
     MI_Result r = MI_KCP_Connect(ip_enc, port);
@@ -143,6 +146,32 @@ Napi::Value SecureDelete(const Napi::CallbackInfo& info) {
     return Napi::Boolean::New(env, r == MI_OK);
 }
 
+bool RawSendBridge(const uint8_t* data, size_t len) {
+    if (g_raw_send_ref.IsEmpty()) return false;
+    Napi::Env env = g_raw_send_ref.Env();
+    Napi::HandleScope scope(env);
+    Napi::Buffer<uint8_t> buf = Napi::Buffer<uint8_t>::Copy(env, data, len);
+    try {
+        Napi::Value ret = g_raw_send_ref.Value().Call({buf});
+        if (ret.IsBoolean()) return ret.As<Napi::Boolean>().Value();
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
+
+void RawRecvBridge(const uint8_t* data, size_t len) {
+    if (g_raw_recv_ref.IsEmpty()) return;
+    Napi::Env env = g_raw_recv_ref.Env();
+    Napi::HandleScope scope(env);
+    Napi::Buffer<uint8_t> buf = Napi::Buffer<uint8_t>::Copy(env, data, len);
+    try {
+        g_raw_recv_ref.Value().Call({buf});
+    } catch (...) {
+        // swallow JS exceptions in bridge
+    }
+}
+
 Napi::Object InitAddon(Napi::Env env, Napi::Object exports) {
     exports.Set("init", Napi::Function::New(env, Init));
     exports.Set("shutdown", Napi::Function::New(env, Shutdown));
@@ -159,14 +188,8 @@ Napi::Object InitAddon(Napi::Env env, Napi::Object exports) {
             return env.Undefined();
         }
         Napi::Function fn = info[0].As<Napi::Function>();
-        auto cb = [fn](const uint8_t* data, size_t len) -> bool {
-            Napi::Env env = fn.Env();
-            Napi::HandleScope scope(env);
-            Napi::Buffer<uint8_t> buf = Napi::Buffer<uint8_t>::Copy(env, data, len);
-            fn.Call({buf});
-            return true;
-        };
-        MI_SetRawSend(cb);
+        g_raw_send_ref.Reset(fn, 1);
+        MI_SetRawSend(&RawSendBridge);
         return env.Undefined();
     }));
     exports.Set("setRawReceive", Napi::Function::New(env, [](const Napi::CallbackInfo& info) {
@@ -176,13 +199,8 @@ Napi::Object InitAddon(Napi::Env env, Napi::Object exports) {
             return env.Undefined();
         }
         Napi::Function fn = info[0].As<Napi::Function>();
-        auto cb = [fn](const uint8_t* data, size_t len) {
-            Napi::Env env = fn.Env();
-            Napi::HandleScope scope(env);
-            Napi::Buffer<uint8_t> buf = Napi::Buffer<uint8_t>::Copy(env, data, len);
-            fn.Call({buf});
-        };
-        MI_SetRawReceive(cb);
+        g_raw_recv_ref.Reset(fn, 1);
+        MI_SetRawReceive(&RawRecvBridge);
         return env.Undefined();
     }));
     return exports;

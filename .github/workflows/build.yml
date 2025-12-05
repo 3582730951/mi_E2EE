@@ -37,7 +37,7 @@ jobs:
           $ErrorActionPreference = 'Continue'
           choco install openssl --no-progress -y || echo "openssl install skipped"
           choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' --no-progress -y || echo "cmake already present"
-          echo "mysql client skipped on Windows (stub mode)"
+          choco install mysql --no-progress -y || echo "mysql install skipped"
 
       - name: Generate self-signed cert (PEM, base64)
         shell: bash
@@ -89,6 +89,13 @@ jobs:
       - name: Build
         run: cmake --build build --config ${{ env.CMAKE_BUILD_TYPE }} --target mi_server_app mi_client_e2ee
         shell: bash
+
+      - name: Build Node addon (mi_bridge)
+        working-directory: mi_client_E2EE/mi_bridge
+        shell: bash
+        run: |
+          npm install --no-fund --no-audit
+          npx node-gyp configure build
 
       - name: Build Electron client (Windows)
         if: runner.os == 'Windows'

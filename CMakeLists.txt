@@ -5,6 +5,10 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 add_compile_definitions(MI_STATIC)
+if(MSVC)
+    # Avoid MSVC constexpr mutex ABI requiring newer vcrt; use runtime-initialized mutex.
+    add_compile_definitions(_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR)
+endif()
 
 option(MI_USE_OPENSSL "Use OpenSSL for AES-GCM and crypto primitives" ON)
 option(MI_USE_KCP "Use real KCP transport if available" OFF)

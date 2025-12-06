@@ -96,6 +96,13 @@ jobs:
           Get-ChildItem -Recurse build\mi_client_E2EE -Include *.lib
         shell: pwsh
 
+      - name: Copy client lib for node-gyp (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path mi_client_E2EE/mi_bridge/build/Release | Out-Null
+          Copy-Item build/mi_client_E2EE/Release/mi_client_e2ee.lib mi_client_E2EE/mi_bridge/build/Release/ -Force
+
       - name: Build Node addon (mi_bridge)
         working-directory: mi_client_E2EE/mi_bridge
         shell: bash

@@ -36,6 +36,10 @@ jobs:
         run: |
           $ErrorActionPreference = 'Continue'
           choco install openssl --no-progress -y || echo "openssl install skipped"
+          choco install vcredist140 --no-progress -y || echo "vcredist install skipped"
+          echo "OPENSSL_ROOT_DIR=C:\Program Files\OpenSSL-Win64" >> $env:GITHUB_ENV
+          echo "OPENSSL_DIR=C:\Program Files\OpenSSL-Win64" >> $env:GITHUB_ENV
+          echo "OPENSSL_LIB_DIR=C:\Program Files\OpenSSL-Win64\lib" >> $env:GITHUB_ENV
           choco install mysql-connector-c --no-progress -y || echo "mysql connector install skipped"
           choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System' --no-progress -y || echo "cmake already present"
           choco install mysql --no-progress -y || echo "mysql install skipped"
@@ -120,7 +124,14 @@ jobs:
         run: |
           npm install --no-fund --no-audit
           $env:GYP_MSVS_VERSION="2022"
-          npx node-gyp rebuild --release --msvs_version=2022 --target=28.0.0 --dist-url=https://electronjs.org/headers
+          $env:OPENSSL_DIR="C:\Program Files\OpenSSL-Win64"
+          $env:OPENSSL_ROOT_DIR="C:\Program Files\OpenSSL-Win64"
+          $env:OPENSSL_LIB_DIR="C:\Program Files\OpenSSL-Win64\lib"
+          $env:INCLUDE="C:\Program Files\OpenSSL-Win64\include;$env:INCLUDE"
+          $env:LIB="$env:OPENSSL_LIB_DIR;$env:OPENSSL_LIB_DIR\VC;$env:LIB"
+          Copy-Item "C:\Program Files\OpenSSL-Win64\lib\VC\libssl-3-x64.lib" . -Force -ErrorAction SilentlyContinue
+          Copy-Item "C:\Program Files\OpenSSL-Win64\lib\VC\libcrypto-3-x64.lib" . -Force -ErrorAction SilentlyContinue
+          npx node-gyp rebuild --release --msvs_version=2022 --target=28.0.0 --dist-url=https://electronjs.org/headers --openssl_root="C:\Program Files\OpenSSL-Win64" --openssl_dir="C:\Program Files\OpenSSL-Win64" --openssl_libpath="C:\Program Files\OpenSSL-Win64\lib"
 
       - name: Copy mi_bridge addon into Electron app (Windows)
         if: runner.os == 'Windows'

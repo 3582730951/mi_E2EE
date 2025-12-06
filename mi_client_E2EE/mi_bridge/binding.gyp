@@ -11,15 +11,16 @@
       ],
       "cflags!": [ "-fno-exceptions" ],
       "cflags_cc!": [ "-fno-exceptions" ],
-      "defines": [ "NAPI_DISABLE_CPP_EXCEPTIONS", "MI_STATIC" ],
+      "defines": [ "NAPI_DISABLE_CPP_EXCEPTIONS" ],
       "conditions": [
         [ "OS=='win'", {
           "libraries": [
             "<(module_root_dir)/../../build/mi_client_E2EE/Release/mi_client_e2ee.lib",
+            "<(module_root_dir)/../../build/Release/mi_internal.lib",
             "ws2_32.lib"
           ],
           "msvs_settings": {
-            "VCCLCompilerTool": { "ExceptionHandling": 0 }
+            "VCCLCompilerTool": { "ExceptionHandling": 0, "RuntimeLibrary": 2 }
           }
         }],
         [ "OS!='win'", {

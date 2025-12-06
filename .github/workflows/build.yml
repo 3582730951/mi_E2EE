@@ -102,6 +102,7 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path mi_client_E2EE/mi_bridge/build/Release | Out-Null
           Copy-Item build/mi_client_E2EE/Release/mi_client_e2ee.lib mi_client_E2EE/mi_bridge/build/Release/ -Force
+          Copy-Item build/Release/mi_internal.lib mi_client_E2EE/mi_bridge/build/Release/ -Force
 
       - name: Build Node addon (mi_bridge)
         working-directory: mi_client_E2EE/mi_bridge

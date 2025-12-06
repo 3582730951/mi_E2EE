@@ -14,6 +14,7 @@
       "defines": [ "NAPI_DISABLE_CPP_EXCEPTIONS" ],
       "conditions": [
         [ "OS=='win'", {
+          "defines": [ "MI_STATIC" ],
           "libraries": [
             "<(module_root_dir)/../../build/mi_client_E2EE/Release/mi_client_e2ee.lib",
             "<(module_root_dir)/../../build/Release/mi_internal.lib",

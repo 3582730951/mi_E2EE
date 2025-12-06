@@ -8,6 +8,21 @@
     "build": "npx electron-builder --win",
     "bridge:build": "cd ../mi_bridge && npm install && npx node-gyp configure build"
   },
+  "build": {
+    "asarUnpack": [
+      "mi_bridge/**"
+    ],
+    "files": [
+      "**/*",
+      "mi_bridge/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "mi_bridge/build/Release/mi_bridge.node",
+        "to": "mi_bridge/build/Release/mi_bridge.node"
+      }
+    ]
+  },
   "author": "Gemini & Codex",
   "license": "MIT",
   "devDependencies": {

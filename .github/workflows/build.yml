@@ -121,6 +121,13 @@ jobs:
           $env:GYP_MSVS_VERSION="2022"
           npx node-gyp rebuild --release --msvs_version=2022
 
+      - name: Copy mi_bridge addon into Electron app (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path mi_client_E2EE/src/E2EE_Client_Windows/mi_bridge/build/Release | Out-Null
+          Copy-Item mi_client_E2EE/mi_bridge/build/Release/mi_bridge.node mi_client_E2EE/src/E2EE_Client_Windows/mi_bridge/build/Release/ -Force
+
       - name: Build Electron client (Windows)
         if: runner.os == 'Windows'
         shell: pwsh

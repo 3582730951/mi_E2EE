@@ -9,6 +9,10 @@
         "../../include",
         "../../common"
       ],
+      "dependencies": [
+        "<(module_root_dir)/../../build/mi_client_E2EE/mi_client_e2ee.vcxproj",
+        "<(module_root_dir)/../../build/mi_internal.vcxproj"
+      ],
       "cflags!": [ "-fno-exceptions" ],
       "cflags_cc!": [ "-fno-exceptions" ],
       "defines": [ "NAPI_DISABLE_CPP_EXCEPTIONS" ],

@@ -183,10 +183,11 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force -Path dist | Out-Null
           $unpacked = Get-ChildItem mi_client_E2EE/src/E2EE_Client_Windows/dist -Directory -Filter "*win-unpacked*" | Select-Object -First 1
-          if (-Not $unpacked) { Write-Error "win-unpacked not found after build"; exit 1 }
+          if (-not $unpacked) { Write-Error "win-unpacked not found after build"; exit 1 }
+          $unpackedPath = $unpacked.FullName
           $targets = @(
-            Join-Path $unpacked.FullName "resources/app.asar.unpacked/mi_bridge/build/Release",
-            Join-Path $unpacked.FullName "resources/app/mi_bridge/build/Release"
+            (Join-Path $unpackedPath "resources/app.asar.unpacked/mi_bridge/build/Release"),
+            (Join-Path $unpackedPath "resources/app/mi_bridge/build/Release")
           )
           New-Item -ItemType Directory -Force -Path $targets | Out-Null
           $dlls = @()

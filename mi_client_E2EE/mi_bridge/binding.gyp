@@ -22,7 +22,12 @@
             "<(module_root_dir)/../../build/mi_client_E2EE/Release/mi_client_e2ee.lib",
             "<(module_root_dir)/../../build/Release/mi_internal.lib",
             "ws2_32.lib"
-          ]
+          ],
+          "msbuild_settings": {
+            "ClCompile": {
+              "RuntimeLibrary": "MultiThreadedDLL"
+            }
+          }
         }],
         [ "OS!='win'", {
           "library_dirs": [

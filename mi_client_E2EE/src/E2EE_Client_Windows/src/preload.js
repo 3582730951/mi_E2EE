@@ -11,12 +11,10 @@ try {
 }
 
 const allowMockBridge = process.env.MI_ALLOW_BRIDGE_MOCK === '1';
-if (!native && !allowMockBridge) {
+const bridgeMissingHint = () => {
     const hint = nativeLoadError ? nativeLoadError.message : 'mi_bridge.node missing';
-    const msg = `[BRIDGE] Native addon unavailable (${hint}). Ensure mi_bridge.node与依赖DLL(libssl/libcrypto/libmysql,vcruntime/msvcp)打包到 resources/app.asar.unpacked/mi_bridge/build/Release 或同级目录；如需强制使用 Mock，请设置 MI_ALLOW_BRIDGE_MOCK=1。`;
-    console.error(msg);
-    throw new Error(msg);
-}
+    return `[BRIDGE] Native addon unavailable (${hint}). 请确认 mi_bridge.node 与依赖 DLL (libssl/libcrypto/libmysql,vcruntime/msvcp) 位于 resources/app.asar.unpacked/mi_bridge/build/Release 或同级目录；如需演示模式，请设置 MI_ALLOW_BRIDGE_MOCK=1。`;
+};
 
 const Bridge = native ? {
     isInitialized: false,
@@ -86,6 +84,18 @@ const Bridge = native ? {
         return true;
     },
     getStatus: () => Bridge.status
+} : {
+    // 硬失败版本：保持 API 存在，便于渲染层给出明确提示
+    isInitialized: false,
+    status: 0,
+    init: async () => { throw new Error(bridgeMissingHint()); },
+    connect: async () => { throw new Error(bridgeMissingHint()); },
+    login: async () => { throw new Error(bridgeMissingHint()); },
+    sendMessage: () => { throw new Error(bridgeMissingHint()); },
+    registerMsgCallback: () => {},
+    sendFile: async () => { throw new Error(bridgeMissingHint()); },
+    secureDelete: async () => { throw new Error(bridgeMissingHint()); },
+    getStatus: () => 0
 };
 
 // --- 暴露给渲染进程的安全 API ---

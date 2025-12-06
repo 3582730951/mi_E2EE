@@ -111,7 +111,7 @@ jobs:
         shell: bash
         run: |
           npm install --no-fund --no-audit
-          npx node-gyp rebuild
+          npx node-gyp rebuild --target=28.0.0 --dist-url=https://electronjs.org/headers
 
       - name: Build Node addon (mi_bridge, Windows)
         if: runner.os == 'Windows'
@@ -120,7 +120,7 @@ jobs:
         run: |
           npm install --no-fund --no-audit
           $env:GYP_MSVS_VERSION="2022"
-          npx node-gyp rebuild --release --msvs_version=2022
+          npx node-gyp rebuild --release --msvs_version=2022 --target=28.0.0 --dist-url=https://electronjs.org/headers
 
       - name: Copy mi_bridge addon into Electron app (Windows)
         if: runner.os == 'Windows'

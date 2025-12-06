@@ -39,3 +39,7 @@ database=mie2ee
 username=dbuser
 passwd=dbpass
 ```
+
+## CI 构建产物与本地路径
+- 最新 GitHub Actions 构建解压默认放置路径：`D:\core-test\mi_e2ee\`
+- GitHub 访问密钥：请自行填写并保存在本地环境变量或密钥管理中，不要提交真实密钥到仓库。

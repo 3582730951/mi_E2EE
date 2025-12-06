@@ -104,17 +104,22 @@ jobs:
           Copy-Item build/mi_client_E2EE/Release/mi_client_e2ee.lib mi_client_E2EE/mi_bridge/build/Release/ -Force
           Copy-Item build/Release/mi_internal.lib mi_client_E2EE/mi_bridge/build/Release/ -Force
 
-      - name: Build Node addon (mi_bridge)
+      - name: Build Node addon (mi_bridge, Linux)
+        if: runner.os != 'Windows'
         working-directory: mi_client_E2EE/mi_bridge
         shell: bash
         run: |
           npm install --no-fund --no-audit
-          if [ "$RUNNER_OS" = "Windows" ]; then
-            npm config set msvs_version 2022
-            npx node-gyp rebuild --release
-          else
-            npx node-gyp rebuild
-          fi
+          npx node-gyp rebuild
+
+      - name: Build Node addon (mi_bridge, Windows)
+        if: runner.os == 'Windows'
+        working-directory: mi_client_E2EE/mi_bridge
+        shell: pwsh
+        run: |
+          npm install --no-fund --no-audit
+          $env:GYP_MSVS_VERSION="2022"
+          npx node-gyp rebuild --release --msvs_version=2022
 
       - name: Build Electron client (Windows)
         if: runner.os == 'Windows'

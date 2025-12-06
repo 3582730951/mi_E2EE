@@ -95,7 +95,7 @@ jobs:
         shell: bash
         run: |
           npm install --no-fund --no-audit
-          npx node-gyp configure build
+          npx node-gyp configure build -- -Dlibrary=static_library
 
       - name: Build Electron client (Windows)
         if: runner.os == 'Windows'

@@ -14,12 +14,9 @@
       "defines": [ "NAPI_DISABLE_CPP_EXCEPTIONS" ],
       "conditions": [
         [ "OS=='win'", {
-          "library_dirs": [
-            "<(module_root_dir)/../../build/mi_client_E2EE/Release",
-            "<(module_root_dir)/../../build/mi_client_E2EE/Debug"
-          ],
           "libraries": [
-            "mi_client_e2ee.lib"
+            "<(module_root_dir)/../../build/mi_client_E2EE/Release/mi_client_e2ee.lib",
+            "<(module_root_dir)/../../build/mi_client_E2EE/Debug/mi_client_e2ee.lib"
           ],
           "msvs_settings": {
             "VCCLCompilerTool": { "ExceptionHandling": 0 }

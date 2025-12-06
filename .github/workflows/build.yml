@@ -129,8 +129,8 @@ jobs:
           set OPENSSL_LIB_DIR=C:\Program Files\OpenSSL-Win64\lib
           set INCLUDE=C:\Program Files\OpenSSL-Win64\include;%INCLUDE%
           set LIB=C:\Program Files\OpenSSL-Win64\lib;C:\Program Files\OpenSSL-Win64\lib\VC;%LIB%
-          copy "C:\Program Files\OpenSSL-Win64\lib\VC\libssl-3-x64.lib" . /Y
-          copy "C:\Program Files\OpenSSL-Win64\lib\VC\libcrypto-3-x64.lib" . /Y
+          powershell -NoProfile -Command " $ssl = Get-ChildItem 'C:\\Program Files\\OpenSSL-Win64' -Recurse -Filter 'libssl*.lib' | Select-Object -First 1; if (-not $ssl) { Write-Error 'libssl*.lib not found'; exit 1 }; Copy-Item $ssl.FullName 'libssl.lib' -Force "
+          powershell -NoProfile -Command " $crypto = Get-ChildItem 'C:\\Program Files\\OpenSSL-Win64' -Recurse -Filter 'libcrypto*.lib' | Select-Object -First 1; if (-not $crypto) { Write-Error 'libcrypto*.lib not found'; exit 1 }; Copy-Item $crypto.FullName 'libcrypto.lib' -Force "
           for /f "usebackq delims=" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set VSPATH=%%i
           if "%VSPATH%"=="" (echo VS install not found & exit /b 1)
           call "%VSPATH%\VC\Auxiliary\Build\vcvars64.bat"

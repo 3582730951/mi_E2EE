@@ -101,8 +101,12 @@ jobs:
         shell: bash
         run: |
           npm install --no-fund --no-audit
-          npm config set msvs_version 2022
-          npx node-gyp rebuild --release
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            npm config set msvs_version 2022
+            npx node-gyp rebuild --release
+          else
+            npx node-gyp rebuild
+          fi
 
       - name: Build Electron client (Windows)
         if: runner.os == 'Windows'

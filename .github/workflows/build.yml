@@ -141,6 +141,20 @@ jobs:
             Compress-Archive -Path dist\* -DestinationPath ..\..\..\dist\client-electron-windows.zip -Force
           }
 
+      - name: Inject mi_bridge.node into win-unpacked (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $nodePath = "mi_client_E2EE/mi_bridge/build/Release/mi_bridge.node"
+          if (-Not (Test-Path $nodePath)) { Write-Host "mi_bridge.node not found at $nodePath"; exit 1 }
+          $unpacked = Get-ChildItem mi_client_E2EE/src/E2EE_Client_Windows/dist -Directory -Filter "*win-unpacked*" | Select-Object -First 1
+          if (-Not $unpacked) { Write-Host "win-unpacked not found after build"; exit 1 }
+          $dst1 = Join-Path $unpacked.FullName "resources/app.asar.unpacked/mi_bridge/build/Release"
+          $dst2 = Join-Path $unpacked.FullName "resources/app/mi_bridge/build/Release"
+          New-Item -ItemType Directory -Force -Path $dst1,$dst2 | Out-Null
+          Copy-Item $nodePath $dst1 -Force
+          Copy-Item $nodePath $dst2 -Force
+
       - name: Package artifacts (Linux)
         if: runner.os == 'Linux'
         shell: bash

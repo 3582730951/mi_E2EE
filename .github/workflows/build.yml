@@ -120,21 +120,22 @@ jobs:
       - name: Build Node addon (mi_bridge, Windows)
         if: runner.os == 'Windows'
         working-directory: mi_client_E2EE/mi_bridge
-        shell: pwsh
+        shell: cmd
         run: |
-          npm install --no-fund --no-audit
-          $env:GYP_MSVS_VERSION="2022"
-          $env:OPENSSL_DIR="C:\Program Files\OpenSSL-Win64"
-          $env:OPENSSL_ROOT_DIR="C:\Program Files\OpenSSL-Win64"
-          $env:OPENSSL_LIB_DIR="C:\Program Files\OpenSSL-Win64\lib"
-          $env:INCLUDE="C:\Program Files\OpenSSL-Win64\include;$env:INCLUDE"
-          $env:LIB="$env:OPENSSL_LIB_DIR;$env:OPENSSL_LIB_DIR\VC;$env:LIB"
-          Copy-Item "C:\Program Files\OpenSSL-Win64\lib\VC\libssl-3-x64.lib" . -Force -ErrorAction SilentlyContinue
-          Copy-Item "C:\Program Files\OpenSSL-Win64\lib\VC\libcrypto-3-x64.lib" . -Force -ErrorAction SilentlyContinue
-          $vsPath = & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
-          if (-not $vsPath) { Write-Error "VS install not found by vswhere"; exit 1 }
-          $vcvars = Join-Path $vsPath "VC\Auxiliary\Build\vcvars64.bat"
-          cmd /c "`"$vcvars`" && set npm_config_msvs_version=2022 && set GYP_MSVS_VERSION=2022 && npx node-gyp rebuild --release --msvs_version=2022 --target=28.0.0 --dist-url=https://electronjs.org/headers --openssl_root=`"C:\Program Files\OpenSSL-Win64`" --openssl_dir=`"C:\Program Files\OpenSSL-Win64`" --openssl_libpath=`"C:\Program Files\OpenSSL-Win64\lib`""
+          set npm_config_msvs_version=2022
+          set GYP_MSVS_VERSION=2022
+          set OPENSSL_DIR=C:\Program Files\OpenSSL-Win64
+          set OPENSSL_ROOT_DIR=C:\Program Files\OpenSSL-Win64
+          set OPENSSL_LIB_DIR=C:\Program Files\OpenSSL-Win64\lib
+          set INCLUDE=C:\Program Files\OpenSSL-Win64\include;%INCLUDE%
+          set LIB=C:\Program Files\OpenSSL-Win64\lib;C:\Program Files\OpenSSL-Win64\lib\VC;%LIB%
+          copy "C:\Program Files\OpenSSL-Win64\lib\VC\libssl-3-x64.lib" . /Y
+          copy "C:\Program Files\OpenSSL-Win64\lib\VC\libcrypto-3-x64.lib" . /Y
+          for /f "usebackq delims=" %%i in (`"C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath`) do set VSPATH=%%i
+          if "%VSPATH%"=="" (echo VS install not found & exit /b 1)
+          call "%VSPATH%\VC\Auxiliary\Build\vcvars64.bat"
+          call npm install --no-fund --no-audit
+          call npx node-gyp rebuild --release --msvs_version=2022 --target=28.0.0 --dist-url=https://electronjs.org/headers --openssl_root="C:\Program Files\OpenSSL-Win64" --openssl_dir="C:\Program Files\OpenSSL-Win64" --openssl_libpath="C:\Program Files\OpenSSL-Win64\lib"
 
       - name: Copy mi_bridge addon into Electron app (Windows)
         if: runner.os == 'Windows'

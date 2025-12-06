@@ -170,6 +170,9 @@ jobs:
           if ($crypto) { $dlls += $crypto.FullName }
           if ($ssl)    { $dlls += $ssl.FullName }
           if ($mysqlDll) { $dlls += $mysqlDll.FullName }
+          # VS 运行时（vcruntime/msvcp）
+          $vcDlls = Get-ChildItem "C:\Windows\System32" -ErrorAction SilentlyContinue -Include "vcruntime140*.dll","msvcp140*.dll" | Select-Object -First 3
+          if ($vcDlls) { $dlls += $vcDlls.FullName }
           if ($dlls.Count -gt 0) { Copy-Item $dlls dist/server -Force } else { Write-Host "runtime dlls not found"; }
           if (Test-Path dist/server\*) { Compress-Archive -Path dist/server\* -DestinationPath ("server-" + $env:ART_OS + ".zip") -Force } else { Write-Host "no server artifacts"; }
           if (Test-Path dist/client\*) { Compress-Archive -Path dist/client\* -DestinationPath ("client-" + $env:ART_OS + ".zip") -Force } else { Write-Host "no client artifacts"; }

@@ -162,16 +162,15 @@ jobs:
           New-Item -ItemType Directory -Force -Path dist/server,dist/client | Out-Null
           Get-ChildItem build -Recurse -Include mi_server_app.exe,mi_server.lib,libmi_server.a | ForEach-Object { Copy-Item $_.FullName dist/server -Force }
           Get-ChildItem build -Recurse -Include mi_client_e2ee.lib,libmi_client_e2ee.a | ForEach-Object { Copy-Item $_.FullName dist/client -Force }
-          # 拷贝运行时 DLL（OpenSSL + MySQL）
+          # 拷贝运行时 DLL（OpenSSL + MySQL），兜底搜 Program Files
           $dlls = @()
-          $opensslBin = "C:\Program Files\OpenSSL-Win64\bin"
-          if (Test-Path "$opensslBin\libcrypto-3-x64.dll") {
-            $dlls += "$opensslBin\libcrypto-3-x64.dll"
-            if (Test-Path "$opensslBin\libssl-3-x64.dll") { $dlls += "$opensslBin\libssl-3-x64.dll" }
-          }
-          $mysqlDll = Get-ChildItem "C:\Program Files" -Recurse -ErrorAction SilentlyContinue -Include libmysql.dll | Select-Object -First 1
+          $crypto = Get-ChildItem "C:\Program Files" -Recurse -ErrorAction SilentlyContinue -Include "libcrypto-*-x64.dll","libcrypto-*.dll" | Select-Object -First 1
+          $ssl    = Get-ChildItem "C:\Program Files" -Recurse -ErrorAction SilentlyContinue -Include "libssl-*-x64.dll","libssl-*.dll" | Select-Object -First 1
+          $mysqlDll = Get-ChildItem "C:\Program Files" -Recurse -ErrorAction SilentlyContinue -Include "libmysql.dll" | Select-Object -First 1
+          if ($crypto) { $dlls += $crypto.FullName }
+          if ($ssl)    { $dlls += $ssl.FullName }
           if ($mysqlDll) { $dlls += $mysqlDll.FullName }
-          if ($dlls.Count -gt 0) { Copy-Item $dlls dist/server -Force }
+          if ($dlls.Count -gt 0) { Copy-Item $dlls dist/server -Force } else { Write-Host "runtime dlls not found"; }
           if (Test-Path dist/server\*) { Compress-Archive -Path dist/server\* -DestinationPath ("server-" + $env:ART_OS + ".zip") -Force } else { Write-Host "no server artifacts"; }
           if (Test-Path dist/client\*) { Compress-Archive -Path dist/client\* -DestinationPath ("client-" + $env:ART_OS + ".zip") -Force } else { Write-Host "no client artifacts"; }
 

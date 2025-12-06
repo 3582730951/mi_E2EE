@@ -1,4 +1,9 @@
 const api = window.electronAPI;
+if (!api || !api.core) {
+    const hint = 'bridge 未加载。请确认 mi_bridge.node 与依赖 DLL 在 resources/app.asar.unpacked/mi_bridge/build/Release，或设置 MI_ALLOW_BRIDGE_MOCK=1 仅做演示。';
+    alert(`登录失败: preload 未暴露 electronAPI.core。\n${hint}`);
+    throw new Error(hint);
+}
 
 document.getElementById('btn-min').onclick = () => api.loginMin();
 document.getElementById('btn-close').onclick = () => api.loginClose();

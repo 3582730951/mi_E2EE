@@ -90,12 +90,19 @@ jobs:
         run: cmake --build build --config ${{ env.CMAKE_BUILD_TYPE }} --target mi_server_app mi_client_e2ee
         shell: bash
 
+      - name: List built client libs (debug info)
+        if: runner.os == 'Windows'
+        run: |
+          Get-ChildItem -Recurse build\mi_client_E2EE -Include *.lib
+        shell: pwsh
+
       - name: Build Node addon (mi_bridge)
         working-directory: mi_client_E2EE/mi_bridge
         shell: bash
         run: |
           npm install --no-fund --no-audit
-          npx node-gyp rebuild
+          npm config set msvs_version 2022
+          npx node-gyp rebuild --release
 
       - name: Build Electron client (Windows)
         if: runner.os == 'Windows'

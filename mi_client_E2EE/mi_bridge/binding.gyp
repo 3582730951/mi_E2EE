@@ -15,8 +15,7 @@
       "conditions": [
         [ "OS=='win'", {
           "libraries": [
-            "<(module_root_dir)/../../build/mi_client_E2EE/Release/mi_client_e2ee.lib",
-            "<(module_root_dir)/../../build/mi_client_E2EE/Debug/mi_client_e2ee.lib"
+            "<(module_root_dir)/../../build/mi_client_E2EE/Release/mi_client_e2ee.lib"
           ],
           "msvs_settings": {
             "VCCLCompilerTool": { "ExceptionHandling": 0 }

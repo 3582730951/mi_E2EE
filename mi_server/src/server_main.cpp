@@ -9,6 +9,7 @@
 #include <iostream>
 #include <string>
 #include <thread>
+#include <tuple>
 
 struct MySQLConfigIni {
     std::string host;
@@ -28,7 +29,11 @@ static std::string trim(const std::string& s) {
 
 static void load_config(const std::filesystem::path& path, MySQLConfigIni& out) {
     std::ifstream in(path);
-    if (!in.is_open()) return;
+    if (!in.is_open()) {
+        std::cerr << "[server] config.ini not found at " << path.string() << ", using defaults (mysql disabled)\n";
+        return;
+    }
+    std::cerr << "[server] loading config.ini from " << path.string() << "\n";
     std::string line;
     bool in_mysql = false;
     while (std::getline(in, line)) {
@@ -55,15 +60,20 @@ static void load_config(const std::filesystem::path& path, MySQLConfigIni& out) 
 }
 
 int main(int argc, char** argv) {
+    std::ios::sync_with_stdio(false);
+    std::cerr << "[server] mi_server_app starting...\n";
+
     ConfigStruct cfg{};
     cfg.work_dir = ".";
-    cfg.log_level = 0;
+    cfg.log_level = 1; // minimal internal logging
     cfg.enable_hardware_crypto = 0;
     cfg.server_ip = "0.0.0.0";
     cfg.server_port = MI_DEFAULT_PORT;
 
+    std::cerr << "[server] init with listen " << cfg.server_ip << ":" << cfg.server_port
+              << " work_dir=" << cfg.work_dir << "\n";
     if (MI_Server_Init(&cfg) != MI_OK) {
-        std::cerr << "MI_Server_Init failed\n";
+        std::cerr << "[server][fatal] MI_Server_Init failed\n";
         return 1;
     }
 
@@ -77,9 +87,18 @@ int main(int argc, char** argv) {
     MySQLConfigIni mycfg;
     load_config(cfg_path, mycfg);
     if (!mycfg.host.empty() && !mycfg.db.empty() && !mycfg.user.empty()) {
-        MI_Server_SetMySQLConfig(mycfg.host.c_str(), mycfg.port, mycfg.user.c_str(), mycfg.passwd.c_str(), mycfg.db.c_str());
-        MI_Server_EnableMySQL(1);
+        std::cerr << "[server] mysql config: host=" << mycfg.host << " port=" << mycfg.port
+                  << " db=" << mycfg.db << " user=" << mycfg.user << "\n";
+        MI_Result r1 = MI_Server_SetMySQLConfig(
+            mycfg.host.c_str(), mycfg.port, mycfg.user.c_str(), mycfg.passwd.c_str(), mycfg.db.c_str());
+        std::cerr << "[server] MI_Server_SetMySQLConfig => " << static_cast<int>(r1) << "\n";
+        MI_Result r2 = MI_Server_EnableMySQL(1);
+        std::cerr << "[server] MI_Server_EnableMySQL => " << static_cast<int>(r2) << "\n";
+    } else {
+        std::cerr << "[server] mysql config incomplete, mysql disabled\n";
     }
+
+    std::cerr << "[server] entering poll loop...\n";
 
     while (true) {
         MI_Server_PollKCP();

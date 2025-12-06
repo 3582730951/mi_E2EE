@@ -134,7 +134,7 @@ jobs:
           $vsPath = & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
           if (-not $vsPath) { Write-Error "VS install not found by vswhere"; exit 1 }
           $vcvars = Join-Path $vsPath "VC\Auxiliary\Build\vcvars64.bat"
-          cmd /c "`"$vcvars`" && set GYP_MSVS_VERSION=2022 && npx node-gyp rebuild --release --msvs_version=2022 --target=28.0.0 --dist-url=https://electronjs.org/headers --openssl_root=`"C:\Program Files\OpenSSL-Win64`" --openssl_dir=`"C:\Program Files\OpenSSL-Win64`" --openssl_libpath=`"C:\Program Files\OpenSSL-Win64\lib`""
+          cmd /c "`"$vcvars`" && set npm_config_msvs_version=2022 && set GYP_MSVS_VERSION=2022 && npx node-gyp rebuild --release --msvs_version=2022 --target=28.0.0 --dist-url=https://electronjs.org/headers --openssl_root=`"C:\Program Files\OpenSSL-Win64`" --openssl_dir=`"C:\Program Files\OpenSSL-Win64`" --openssl_libpath=`"C:\Program Files\OpenSSL-Win64\lib`""
 
       - name: Copy mi_bridge addon into Electron app (Windows)
         if: runner.os == 'Windows'

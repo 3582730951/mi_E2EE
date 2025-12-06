@@ -1,11 +1,21 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 let native = null;
+let nativeLoadError = null;
 try {
     native = require('../../mi_bridge/build/Release/mi_bridge.node');
     console.log('[BRIDGE] Native addon loaded.');
 } catch (e) {
-    console.warn('[BRIDGE] Native addon not found, using mock bridge.', e.message);
+    nativeLoadError = e;
+    console.warn('[BRIDGE] Native addon load failed.', e.message);
+}
+
+const allowMockBridge = process.env.MI_ALLOW_BRIDGE_MOCK === '1';
+if (!native && !allowMockBridge) {
+    const hint = nativeLoadError ? nativeLoadError.message : 'mi_bridge.node missing';
+    const msg = `[BRIDGE] Native addon unavailable (${hint}). Ensure mi_bridge.node与依赖DLL(libssl/libcrypto/libmysql,vcruntime/msvcp)打包到 resources/app.asar.unpacked/mi_bridge/build/Release 或同级目录；如需强制使用 Mock，请设置 MI_ALLOW_BRIDGE_MOCK=1。`;
+    console.error(msg);
+    throw new Error(msg);
 }
 
 const Bridge = native ? {

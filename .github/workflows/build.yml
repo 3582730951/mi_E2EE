@@ -162,9 +162,6 @@ jobs:
           npm install --no-fund --no-audit
           npm run build
           New-Item -ItemType Directory -Force -Path ..\..\..\dist | Out-Null
-          if (Test-Path dist) {
-            Compress-Archive -Path dist\* -DestinationPath ..\..\..\dist\client-electron-windows.zip -Force
-          }
 
       - name: Inject mi_bridge.node into win-unpacked (Windows)
         if: runner.os == 'Windows'
@@ -179,6 +176,38 @@ jobs:
           New-Item -ItemType Directory -Force -Path $dst1,$dst2 | Out-Null
           Copy-Item $nodePath $dst1 -Force
           Copy-Item $nodePath $dst2 -Force
+
+      - name: Bundle runtime deps into Electron app (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          $unpacked = Get-ChildItem mi_client_E2EE/src/E2EE_Client_Windows/dist -Directory -Filter "*win-unpacked*" | Select-Object -First 1
+          if (-Not $unpacked) { Write-Error "win-unpacked not found after build"; exit 1 }
+          $targets = @(
+            Join-Path $unpacked.FullName "resources/app.asar.unpacked/mi_bridge/build/Release",
+            Join-Path $unpacked.FullName "resources/app/mi_bridge/build/Release"
+          )
+          New-Item -ItemType Directory -Force -Path $targets | Out-Null
+          $dlls = @()
+          $ssl = Get-ChildItem "C:\Program Files" -Recurse -ErrorAction SilentlyContinue -Include "libssl-*-x64.dll","libssl-3*.dll","libssl-1_1-x64.dll" | Select-Object -First 1
+          $crypto = Get-ChildItem "C:\Program Files" -Recurse -ErrorAction SilentlyContinue -Include "libcrypto-*-x64.dll","libcrypto-3*.dll","libcrypto-1_1-x64.dll" | Select-Object -First 1
+          $mysql = Get-ChildItem "C:\Program Files" -Recurse -ErrorAction SilentlyContinue -Include "libmysql.dll" | Select-Object -First 1
+          $vc = Get-ChildItem "C:\Windows\System32" -ErrorAction SilentlyContinue -Include "vcruntime140*.dll","msvcp140*.dll" | Select-Object -First 3
+          if (-not $ssl -or -not $crypto) { Write-Error "OpenSSL runtime dlls not found"; exit 1 }
+          $dlls += @($ssl, $crypto)
+          if ($mysql) { $dlls += $mysql }
+          if ($vc) { $dlls += $vc }
+          foreach ($target in $targets) {
+            foreach ($dll in $dlls) {
+              Copy-Item $dll.FullName $target -Force
+            }
+          }
+          $zipDir = (Resolve-Path dist).Path
+          $zipPath = Join-Path $zipDir "client-electron-windows.zip"
+          if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
+          $distRoot = (Resolve-Path mi_client_E2EE/src/E2EE_Client_Windows/dist).Path
+          Compress-Archive -Path "$distRoot\*" -DestinationPath $zipPath -Force
 
       - name: Package artifacts (Linux)
         if: runner.os == 'Linux'

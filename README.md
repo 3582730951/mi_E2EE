@@ -19,6 +19,11 @@ CREATE TABLE IF NOT EXISTS users (
 -- 示例：插入用户（将明文密码先取 SHA-256，填入 64 位 hex）
 INSERT INTO users (username, password_sha256) VALUES
 ('admin', UNHEX('0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF'));
+
+  INSERT INTO users (username, password_sha256) VALUES
+  ('admin', UNHEX(SHA2('123456', 256)));
+    INSERT INTO users (username, password_sha256) VALUES
+  ('test', UNHEX(SHA2('123456', 256)));
 ```
 
 ## 关键说明

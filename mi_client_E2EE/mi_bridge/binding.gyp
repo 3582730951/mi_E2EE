@@ -15,8 +15,8 @@
       "conditions": [
         [ "OS=='win'", {
           "library_dirs": [
-            "<(module_root_dir)/../build/mi_client_E2EE/Release",
-            "<(module_root_dir)/../build/mi_client_E2EE/Debug"
+            "<(module_root_dir)/../../build/mi_client_E2EE/Release",
+            "<(module_root_dir)/../../build/mi_client_E2EE/Debug"
           ],
           "libraries": [
             "mi_client_e2ee.lib"
@@ -27,16 +27,16 @@
         }],
         [ "OS!='win'", {
           "library_dirs": [
-            "<(module_root_dir)/../build/mi_client_E2EE",
-            "<(module_root_dir)/../build"
+            "<(module_root_dir)/../../build/mi_client_E2EE",
+            "<(module_root_dir)/../../build"
           ],
           "libraries": [
             "-lmi_client_e2ee"
           ],
           "link_settings": {
             "library_dirs": [
-              "<(module_root_dir)/../build/mi_client_E2EE",
-              "<(module_root_dir)/../build"
+              "<(module_root_dir)/../../build/mi_client_E2EE",
+              "<(module_root_dir)/../../build"
             ]
           }
         }]

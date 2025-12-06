@@ -19,6 +19,10 @@ struct MySQLConfigIni {
     std::string passwd;
 };
 
+struct ServerConfigIni {
+    int port{MI_DEFAULT_PORT};
+};
+
 static std::string trim(const std::string& s) {
     size_t b = 0;
     while (b < s.size() && std::isspace(static_cast<unsigned char>(s[b]))) ++b;
@@ -36,26 +40,58 @@ static void load_config(const std::filesystem::path& path, MySQLConfigIni& out) 
     std::cerr << "[server] loading config.ini from " << path.string() << "\n";
     std::string line;
     bool in_mysql = false;
+    bool in_server = false;
     while (std::getline(in, line)) {
         line = trim(line);
         if (line.empty() || line[0] == '#') continue;
         if (line.front() == '[' && line.back() == ']') {
             std::string sec = line.substr(1, line.size() - 2);
             in_mysql = (sec == "mysql");
+            in_server = (sec == "server");
             continue;
         }
-        if (!in_mysql) continue;
+        if (!in_mysql && !in_server) continue;
         auto pos = line.find('=');
         if (pos == std::string::npos) continue;
         std::string key = trim(line.substr(0, pos));
         std::string val = trim(line.substr(pos + 1));
-        if (key == "mysql_ip") out.host = val;
-        else if (key == "mysql_port") {
+        if (in_mysql) {
+            if (key == "mysql_ip") out.host = val;
+            else if (key == "mysql_port") {
+                try { out.port = std::stoi(val); } catch (...) {}
+            }
+            else if (key == "database") out.db = val;
+            else if (key == "username") out.user = val;
+            else if (key == "passwd") out.passwd = val;
+        } else if (in_server) {
+            if (key == "port") {
+                try { out.port = std::stoi(val); } catch (...) {}
+            }
+        }
+    }
+}
+
+static void load_server_config(const std::filesystem::path& path, ServerConfigIni& out) {
+    std::ifstream in(path);
+    if (!in.is_open()) return;
+    std::string line;
+    bool in_server = false;
+    while (std::getline(in, line)) {
+        line = trim(line);
+        if (line.empty() || line[0] == '#') continue;
+        if (line.front() == '[' && line.back() == ']') {
+            std::string sec = line.substr(1, line.size() - 2);
+            in_server = (sec == "server");
+            continue;
+        }
+        if (!in_server) continue;
+        auto pos = line.find('=');
+        if (pos == std::string::npos) continue;
+        std::string key = trim(line.substr(0, pos));
+        std::string val = trim(line.substr(pos + 1));
+        if (key == "port") {
             try { out.port = std::stoi(val); } catch (...) {}
         }
-        else if (key == "database") out.db = val;
-        else if (key == "username") out.user = val;
-        else if (key == "passwd") out.passwd = val;
     }
 }
 
@@ -85,7 +121,11 @@ int main(int argc, char** argv) {
     std::filesystem::path cfg_path = (argc > 1) ? argv[1] : (exe_dir / "config.ini");
 
     MySQLConfigIni mycfg;
+    ServerConfigIni srvCfg;
     load_config(cfg_path, mycfg);
+    load_server_config(cfg_path, srvCfg);
+    cfg.server_port = srvCfg.port;
+    std::cerr << "[server] listen port set to " << cfg.server_port << "\n";
     if (!mycfg.host.empty() && !mycfg.db.empty() && !mycfg.user.empty()) {
         std::cerr << "[server] mysql config: host=" << mycfg.host << " port=" << mycfg.port
                   << " db=" << mycfg.db << " user=" << mycfg.user << "\n";

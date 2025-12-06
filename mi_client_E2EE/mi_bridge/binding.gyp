@@ -9,28 +9,36 @@
         "../../include",
         "../../common"
       ],
-      "dependencies": [
-        "<(module_root_dir)/../mi_client_e2ee.vcxproj",
-        "<(module_root_dir)/../build/Release/mi_client_e2ee.lib"
-      ],
-      "libraries": [
-        "<(module_root_dir)/../build/Release/mi_client_e2ee.lib",
-        "<(module_root_dir)/../build/Debug/mi_client_e2ee.lib"
-      ],
       "cflags!": [ "-fno-exceptions" ],
       "cflags_cc!": [ "-fno-exceptions" ],
       "defines": [ "NAPI_DISABLE_CPP_EXCEPTIONS" ],
       "conditions": [
         [ "OS=='win'", {
+          "library_dirs": [
+            "<(module_root_dir)/../build/mi_client_E2EE/Release",
+            "<(module_root_dir)/../build/mi_client_E2EE/Debug"
+          ],
+          "libraries": [
+            "mi_client_e2ee.lib"
+          ],
           "msvs_settings": {
             "VCCLCompilerTool": { "ExceptionHandling": 0 }
           }
         }],
         [ "OS!='win'", {
+          "library_dirs": [
+            "<(module_root_dir)/../build/mi_client_E2EE",
+            "<(module_root_dir)/../build"
+          ],
           "libraries": [
-            "<(module_root_dir)/../build/libmi_client_e2ee.a",
-            "<(module_root_dir)/../build/libmi_client_e2ee.so"
-          ]
+            "-lmi_client_e2ee"
+          ],
+          "link_settings": {
+            "library_dirs": [
+              "<(module_root_dir)/../build/mi_client_E2EE",
+              "<(module_root_dir)/../build"
+            ]
+          }
         }]
       ]
     }

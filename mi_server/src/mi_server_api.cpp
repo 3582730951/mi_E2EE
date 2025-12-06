@@ -91,7 +91,9 @@ MI_Result MI_CALL MI_Server_Init(const ConfigStruct* cfg) {
     hex_to_bytes(MI_BUILTIN_SERVER_SIGN_PUB_HEX, g_state.server_sign_pub.data());
     g_state.relay.clear();
     KCPConfig kcp_cfg{cfg->server_ip, cfg->server_port};
-    KCPRelayStart(kcp_cfg);
+    if (!KCPRelayStart(kcp_cfg)) {
+        return MI_ERR_INVALID_CONFIG;
+    }
     return MI_OK;
 }
 

@@ -13,6 +13,7 @@
 #include <unordered_map>
 #include <array>
 #include <chrono>
+#include <iostream>
 #ifdef MI_USE_KCP
 #include <ikcp.h>
 #endif
@@ -100,18 +101,35 @@ bool KCPRelayStart(const KCPConfig& cfg) {
     if (g_sock >= 0) return true;
 #ifdef _WIN32
     WSADATA wsaData;
-    WSAStartup(MAKEWORD(2, 2), &wsaData);
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+        std::cerr << "[kcp] WSAStartup failed\n";
+        return false;
+    }
 #endif
     if (std::all_of(g_server_sign_priv.begin(), g_server_sign_priv.end(), [](uint8_t b){return b==0;})) {
         hex_to_bytes(MI_BUILTIN_SERVER_SIGN_PRIV_HEX, g_server_sign_priv.data());
     }
     g_sock = static_cast<int>(socket(AF_INET, SOCK_DGRAM, 0));
-    if (g_sock < 0) return false;
+    if (g_sock < 0) {
+        std::cerr << "[kcp] socket(AF_INET,SOCK_DGRAM) failed\n";
+        return false;
+    }
     sockaddr_in local{};
     local.sin_family = AF_INET;
-    local.sin_port = 0;
+    local.sin_port = htons(static_cast<uint16_t>(cfg.port));
     local.sin_addr.s_addr = INADDR_ANY;
-    bind(g_sock, reinterpret_cast<sockaddr*>(&local), sizeof(local));
+    if (bind(g_sock, reinterpret_cast<sockaddr*>(&local), sizeof(local)) != 0) {
+#ifdef _WIN32
+        std::cerr << "[kcp] bind UDP 0.0.0.0:" << cfg.port << " failed, err=" << WSAGetLastError() << "\n";
+        WSACleanup();
+#else
+        std::cerr << "[kcp] bind UDP 0.0.0.0:" << cfg.port << " failed, errno=" << errno << "\n";
+#endif
+        closesocket(g_sock);
+        g_sock = -1;
+        return false;
+    }
+    std::cerr << "[kcp] bound UDP 0.0.0.0:" << cfg.port << "\n";
     g_remote.sin_family = AF_INET;
     g_remote.sin_port = htons(static_cast<uint16_t>(cfg.port));
 #ifdef _WIN32

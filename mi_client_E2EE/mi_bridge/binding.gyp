@@ -21,7 +21,13 @@
           "libraries": [
             "<(module_root_dir)/../../build/mi_client_E2EE/Release/mi_client_e2ee.lib",
             "<(module_root_dir)/../../build/Release/mi_internal.lib",
-            "ws2_32.lib"
+            "ws2_32.lib",
+            "libssl-3-x64.lib",
+            "libcrypto-3-x64.lib"
+          ],
+          "library_dirs": [
+            "C:/Program Files/OpenSSL-Win64/lib",
+            "C:/Program Files/OpenSSL-Win64/lib/VC"
           ],
           "msbuild_settings": {
             "ClCompile": {

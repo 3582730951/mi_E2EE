@@ -5,32 +5,31 @@ let nativeLoadError = null;
 let nativeLoadedPath = null;
 let bridgeCandidates = [];
 try {
-    const path = require('path');
-    const fs = require('fs');
-    const joinPath = (...parts) => parts.filter(Boolean).join(path.sep);
-    const bases = [
-        process.resourcesPath,
-        path.join(process.execPath, '..', 'resources')
-    ].filter(Boolean);
-    const rels = [
-        ['app.asar.unpacked', 'mi_bridge', 'build', 'Release', 'mi_bridge.node'],
-        ['mi_bridge', 'build', 'Release', 'mi_bridge.node']
-    ];
+    const join = (...parts) => parts.filter(Boolean).join('/').replace(/\\/g, '/');
+    const resourcesPath = (process.resourcesPath || '').replace(/\\/g, '/');
+    const execDir = (process.execPath || '').replace(/\\/g, '/').replace(/\\/g, '/').replace(/\/[^/]*$/, '');
     const candidates = [];
-    for (const b of bases) {
-        for (const r of rels) {
-            candidates.push(path.resolve(joinPath(b, ...r)));
-        }
+    if (resourcesPath) {
+        candidates.push(
+            join(resourcesPath, 'app.asar.unpacked/mi_bridge/build/Release/mi_bridge.node'),
+            join(resourcesPath, 'mi_bridge/build/Release/mi_bridge.node'),
+            join(resourcesPath, 'app/mi_bridge/build/Release/mi_bridge.node')
+        );
+    }
+    if (execDir) {
+        candidates.push(
+            join(execDir, 'resources/app.asar.unpacked/mi_bridge/build/Release/mi_bridge.node'),
+            join(execDir, 'resources/mi_bridge/build/Release/mi_bridge.node'),
+            join(execDir, 'resources/app/mi_bridge/build/Release/mi_bridge.node')
+        );
     }
     bridgeCandidates = candidates;
     for (const p of candidates) {
         try {
-            if (fs.existsSync(p)) {
-                native = require(p);
-                nativeLoadedPath = p;
-                console.log('[BRIDGE] Native addon loaded from', p);
-                break;
-            }
+            native = require(p);
+            nativeLoadedPath = p;
+            console.log('[BRIDGE] Native addon loaded from', p);
+            break;
         } catch (err) {
             nativeLoadError = err;
             continue;

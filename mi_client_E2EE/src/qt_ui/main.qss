@@ -1,0 +1,58 @@
+/* 主窗口样式 - main.qss */
+QMainWindow {
+    background-color: #2E2E2E;
+}
+
+/* 自定义标题栏 */
+#titleBarWidget {
+    background-color: #252525;
+    border-bottom: 1px solid #3C3C3C;
+}
+
+/* 左侧导航栏 */
+#sideBarWidget {
+    background-color: #333333;
+    border-right: 1px solid #3C3C3C;
+}
+
+/* 会话/联系人列表 */
+#conversationListWidget, #contactTreeWidget {
+    background-color: #383838;
+    border: none;
+    color: #E0E0E0;
+}
+
+#conversationListWidget::item:hover {
+    background-color: #4A4A4A;
+}
+
+#conversationListWidget::item:selected {
+    background-color: #555555;
+}
+
+/* 聊天区域 */
+#chatWidget {
+    background-color: #2E2E2E;
+}
+
+/* 消息输入框 */
+#messageTextEdit {
+    background-color: #3C3C3C;
+    border: 1px solid #505050;
+    border-radius: 5px;
+    color: #F0F0F0;
+    padding: 8px;
+}
+
+/* 发送按钮 */
+#sendButton {
+    background-color: #007AFF; /* Apple Blue */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 16px;
+}
+
+#sendButton:hover {
+    background-color: #005ECB;
+}

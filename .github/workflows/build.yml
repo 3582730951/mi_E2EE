@@ -122,6 +122,10 @@ jobs:
         working-directory: mi_client_E2EE/mi_bridge
         shell: cmd
         run: |
+          set npm_config_runtime=electron
+          set npm_config_target=28.0.0
+          set npm_config_arch=x64
+          set npm_config_disturl=https://electronjs.org/headers
           set npm_config_msvs_version=2022
           set GYP_MSVS_VERSION=2022
           set OPENSSL_DIR=C:\Program Files\OpenSSL-Win64
@@ -145,7 +149,7 @@ jobs:
           if "%VSPATH%"=="" (echo VS install not found & exit /b 1)
           call "%VSPATH%\VC\Auxiliary\Build\vcvars64.bat"
           call npm install --no-fund --no-audit
-          call npx node-gyp rebuild --release --msvs_version=2022 --target=28.0.0 --dist-url=https://electronjs.org/headers --openssl_root="C:\Program Files\OpenSSL-Win64" --openssl_dir="C:\Program Files\OpenSSL-Win64" --openssl_libpath="C:\Program Files\OpenSSL-Win64\lib"
+          call npx node-gyp rebuild --release --msvs_version=2022 --runtime=%npm_config_runtime% --target=%npm_config_target% --dist-url=%npm_config_disturl% --openssl_root="C:\Program Files\OpenSSL-Win64" --openssl_dir="C:\Program Files\OpenSSL-Win64" --openssl_libpath="C:\Program Files\OpenSSL-Win64\lib"
 
       - name: Copy mi_bridge addon into Electron app (Windows)
         if: runner.os == 'Windows'

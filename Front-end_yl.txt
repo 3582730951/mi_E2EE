@@ -1,18 +1,24 @@
-filename: Front-end_yl.txt
+####################################################
+# 前端 (Qt) 开发依赖项
+####################################################
 
-# 开发依赖 (DevDependencies)
-electron: ^28.0.0
-electron-builder: ^24.9.0 (用于打包 Windows exe)
-sass: ^1.69.0 (样式预处理)
-eslint: ^8.50.0 (微软代码规范检查)
+# 框架
+# - Qt 6.x (开源版)，模块：Core / Gui / Widgets / Concurrent / Network / Qml(若用 QML)。
+# - 平台：Windows；编译器可选 MSVC 2019+ 或 MinGW 11+。
 
-# 运行时依赖 (Dependencies)
-vue: ^3.3.0 (MVVM 框架，用于复杂状态管理)
-pinia: ^2.1.0 (状态存储)
-ffi-napi: ^4.0.3 (用于调用 Codex 的 .dll)
-ref-napi: ^3.0.3 (C++ 类型映射)
-ref-struct-napi: ^1.1.1 (C++ 结构体映射)
-注意：Electron 端优先通过 N-API `mi_bridge` 调用，ffi 仅保留兼容；接入 Enc 类型需使用 mi_bridge 封装（MI_CreateEncString/Json），rawSend/rawReceive 可用来自定义 KCP socket，日志禁止打印明文/密钥，仅输出指纹和长度。
+# 工具链
+# - CMake 3.20+ 与 Ninja（或 MSBuild）。
+# - Qt 工具：windeployqt（打包用）、lrelease（如有翻译）。
 
-# UI 资源
-font-awesome: (SVG 图标集，本地化部署，不依赖 CDN)
+# 第三方/系统依赖
+# - OpenSSL 1.1/3.x（Qt Network SSL 支持）。
+# - zlib（Qt 自带，通常随安装）。
+# - 运行时 VC++ Redistributable（MSVC 构建时需要）。
+
+# 资源与样式
+# - Qt Designer 生成的 ui_*.h
+# - 自定义样式表 main.qss、login.qss（资源路径 :/styles/）
+
+# 构建步骤提示
+# - 设置 Qt 环境变量并调用：cmake -S . -B build -DCMAKE_PREFIX_PATH=<Qt>/lib/cmake
+# - 生成后运行 windeployqt <exe> 以收集 Qt DLL/插件。

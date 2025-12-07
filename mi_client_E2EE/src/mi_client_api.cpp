@@ -1268,7 +1268,7 @@ MI_Result MI_CALL MI_SendGroupMessage(const EncString group_id, const EncJson me
     CryptoRandomBytes(st.key.data, sizeof(st.key.data));
     st.acked = 1; // sender ack
     key = st.key;
-    // 广播新密钥的指纹给成员（salt 携带版本）
+    // broadcast new key fingerprint with version embedded in salt
     EncJson msg_with_meta = message;
     msg_with_meta.salt = static_cast<uint16_t>(key.version & 0xFFFF);
     return MI_SendMessage(group_id, msg_with_meta);

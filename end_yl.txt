@@ -1,0 +1,21 @@
+####################################################
+# 前端运行/发布依赖清单 (Qt)
+####################################################
+
+# 运行时必备
+# - Qt 6.x 运行库：Qt6Core, Qt6Gui, Qt6Widgets, Qt6Network, Qt6Concurrent，以及对应的 platform plugin (qwindows.dll) 与 styles/basic plugins。
+# - OpenSSL DLL：libcrypto-3, libssl-3（或与 Qt 匹配的 1.1 版本）。
+# - MSVC 运行时 (vcruntime140*, msvcp140*) 若使用 MSVC 构建。
+# - 资源文件：main.qss, login.qss, 图标与 Qt Designer 生成的 UI。
+
+# 构建/打包工具
+# - windeployqt (Qt 安装自带) 自动收集依赖 DLL/插件。
+# - CMake/Ninja 或 MSBuild 用于生成可执行文件。
+
+# 可选/扩展
+# - Qt SVG/Multimedia/QuickControls2 如 UI 需要。
+# - Qt Linguist 工具链用于多语言 (lrelease/lupdate)。
+
+# 环境变量示例
+# - 设置 Qt 路径：set CMAKE_PREFIX_PATH=C:\\Qt\\6.x.x\\msvcXXXX_64\\lib\\cmake
+# - OpenSSL 路径（如未内置）：set OPENSSL_ROOT_DIR=C:\\Program Files\\OpenSSL-Win64

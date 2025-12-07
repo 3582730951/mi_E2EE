@@ -1,14 +1,14 @@
 const { contextBridge, ipcRenderer } = require('electron');
-const path = require('path');
 
 let native = null;
 let nativeLoadError = null;
 let nativeLoadedPath = null;
 try {
+    const res = process.resourcesPath || '';
     const candidates = [
-        path.join(__dirname, '..', '..', 'mi_bridge', 'build', 'Release', 'mi_bridge.node'),
-        path.join(process.resourcesPath, 'app.asar.unpacked', 'mi_bridge', 'build', 'Release', 'mi_bridge.node'),
-        path.join(process.resourcesPath, 'mi_bridge', 'build', 'Release', 'mi_bridge.node')
+        `${res}/app.asar.unpacked/mi_bridge/build/Release/mi_bridge.node`,
+        `${res}/mi_bridge/build/Release/mi_bridge.node`,
+        `${res}/../mi_bridge/build/Release/mi_bridge.node`
     ];
     for (const p of candidates) {
         try {
@@ -28,9 +28,9 @@ try {
 
 const allowMockBridge = process.env.MI_ALLOW_BRIDGE_MOCK === '1';
 const bridgeCandidates = [
-    path.join(__dirname, '..', '..', 'mi_bridge', 'build', 'Release', 'mi_bridge.node'),
-    path.join(process.resourcesPath, 'app.asar.unpacked', 'mi_bridge', 'build', 'Release', 'mi_bridge.node'),
-    path.join(process.resourcesPath, 'mi_bridge', 'build', 'Release', 'mi_bridge.node')
+    `${process.resourcesPath}/app.asar.unpacked/mi_bridge/build/Release/mi_bridge.node`,
+    `${process.resourcesPath}/mi_bridge/build/Release/mi_bridge.node`,
+    `${process.resourcesPath}/../mi_bridge/build/Release/mi_bridge.node`
 ];
 const bridgeMissingHint = () => {
     const hint = nativeLoadError ? nativeLoadError.message : 'mi_bridge.node missing';
@@ -50,7 +50,7 @@ const errorBridge = {
     getStatus: () => 0
 };
 
-const realBridge = {
+const realBridge = native ? {
     isInitialized: false,
     msgCallback: null,
     status: 0,
@@ -80,7 +80,7 @@ const realBridge = {
     },
     secureDelete: async (filePath) => native.secureDelete(filePath),
     getStatus: () => Bridge.status
-};
+} : null;
 
 const mockBridge = {
     isInitialized: false,

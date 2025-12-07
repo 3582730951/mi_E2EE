@@ -3,19 +3,34 @@ const { contextBridge, ipcRenderer } = require('electron');
 let native = null;
 let nativeLoadError = null;
 let nativeLoadedPath = null;
+let bridgeCandidates = [];
 try {
-    const res = process.resourcesPath || '';
-    const candidates = [
-        `${res}/app.asar.unpacked/mi_bridge/build/Release/mi_bridge.node`,
-        `${res}/mi_bridge/build/Release/mi_bridge.node`,
-        `${res}/../mi_bridge/build/Release/mi_bridge.node`
+    const path = require('path');
+    const fs = require('fs');
+    const joinPath = (...parts) => parts.filter(Boolean).join(path.sep);
+    const bases = [
+        process.resourcesPath,
+        path.join(process.execPath, '..', 'resources')
+    ].filter(Boolean);
+    const rels = [
+        ['app.asar.unpacked', 'mi_bridge', 'build', 'Release', 'mi_bridge.node'],
+        ['mi_bridge', 'build', 'Release', 'mi_bridge.node']
     ];
+    const candidates = [];
+    for (const b of bases) {
+        for (const r of rels) {
+            candidates.push(path.resolve(joinPath(b, ...r)));
+        }
+    }
+    bridgeCandidates = candidates;
     for (const p of candidates) {
         try {
-            native = require(p);
-            nativeLoadedPath = p;
-            console.log('[BRIDGE] Native addon loaded from', p);
-            break;
+            if (fs.existsSync(p)) {
+                native = require(p);
+                nativeLoadedPath = p;
+                console.log('[BRIDGE] Native addon loaded from', p);
+                break;
+            }
         } catch (err) {
             nativeLoadError = err;
             continue;
@@ -26,15 +41,11 @@ try {
     console.warn('[BRIDGE] Native addon load failed.', e.message);
 }
 
+// 默认禁用 Mock；仅当 MI_ALLOW_BRIDGE_MOCK=1 时启用
 const allowMockBridge = process.env.MI_ALLOW_BRIDGE_MOCK === '1';
-const bridgeCandidates = [
-    `${process.resourcesPath}/app.asar.unpacked/mi_bridge/build/Release/mi_bridge.node`,
-    `${process.resourcesPath}/mi_bridge/build/Release/mi_bridge.node`,
-    `${process.resourcesPath}/../mi_bridge/build/Release/mi_bridge.node`
-];
 const bridgeMissingHint = () => {
     const hint = nativeLoadError ? nativeLoadError.message : 'mi_bridge.node missing';
-    return `[BRIDGE] Native addon unavailable (${hint}). 已尝试: ${bridgeCandidates.join(' ; ')}。请确认 mi_bridge.node 与依赖 DLL (libssl/libcrypto/libmysql,vcruntime/msvcp) 位于上述目录；如需演示模式，请设置 MI_ALLOW_BRIDGE_MOCK=1。`;
+    return `[BRIDGE] Native addon unavailable (${hint}). 已尝试: ${bridgeCandidates.join(' ; ')}。请确认 mi_bridge.node 与依赖 DLL (libssl/libcrypto/libmysql,vcruntime/msvcp) 位于上述目录。`;
 };
 
 const errorBridge = {

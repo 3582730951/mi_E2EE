@@ -196,7 +196,8 @@ jobs:
           $unpackedPath = $unpacked.FullName
           $targets = @(
             (Join-Path $unpackedPath "resources/app.asar.unpacked/mi_bridge/build/Release"),
-            (Join-Path $unpackedPath "resources/app/mi_bridge/build/Release")
+            (Join-Path $unpackedPath "resources/app/mi_bridge/build/Release"),
+            (Join-Path $unpackedPath "resources/mi_bridge/build/Release")
           )
           New-Item -ItemType Directory -Force -Path $targets | Out-Null
           $dlls = @()

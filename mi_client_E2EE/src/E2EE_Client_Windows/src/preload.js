@@ -50,7 +50,7 @@ const errorBridge = {
     getStatus: () => 0
 };
 
-const Bridge = native ? {
+const realBridge = {
     isInitialized: false,
     msgCallback: null,
     status: 0,
@@ -80,7 +80,9 @@ const Bridge = native ? {
     },
     secureDelete: async (filePath) => native.secureDelete(filePath),
     getStatus: () => Bridge.status
-} : {
+};
+
+const mockBridge = {
     isInitialized: false,
     msgCallback: null,
     status: 0, // 0=断开,1=连接中,2=已连接
@@ -118,7 +120,9 @@ const Bridge = native ? {
         return true;
     },
     getStatus: () => Bridge.status
-} : errorBridge;
+};
+
+const Bridge = native ? realBridge : (allowMockBridge ? mockBridge : errorBridge);
 
 // --- 暴露给渲染进程的安全 API ---
 contextBridge.exposeInMainWorld('electronAPI', {

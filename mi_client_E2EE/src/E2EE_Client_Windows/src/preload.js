@@ -1,19 +1,53 @@
 const { contextBridge, ipcRenderer } = require('electron');
+const path = require('path');
 
 let native = null;
 let nativeLoadError = null;
+let nativeLoadedPath = null;
 try {
-    native = require('../../mi_bridge/build/Release/mi_bridge.node');
-    console.log('[BRIDGE] Native addon loaded.');
+    const candidates = [
+        path.join(__dirname, '..', '..', 'mi_bridge', 'build', 'Release', 'mi_bridge.node'),
+        path.join(process.resourcesPath, 'app.asar.unpacked', 'mi_bridge', 'build', 'Release', 'mi_bridge.node'),
+        path.join(process.resourcesPath, 'mi_bridge', 'build', 'Release', 'mi_bridge.node')
+    ];
+    for (const p of candidates) {
+        try {
+            native = require(p);
+            nativeLoadedPath = p;
+            console.log('[BRIDGE] Native addon loaded from', p);
+            break;
+        } catch (err) {
+            nativeLoadError = err;
+            continue;
+        }
+    }
 } catch (e) {
     nativeLoadError = e;
     console.warn('[BRIDGE] Native addon load failed.', e.message);
 }
 
 const allowMockBridge = process.env.MI_ALLOW_BRIDGE_MOCK === '1';
+const bridgeCandidates = [
+    path.join(__dirname, '..', '..', 'mi_bridge', 'build', 'Release', 'mi_bridge.node'),
+    path.join(process.resourcesPath, 'app.asar.unpacked', 'mi_bridge', 'build', 'Release', 'mi_bridge.node'),
+    path.join(process.resourcesPath, 'mi_bridge', 'build', 'Release', 'mi_bridge.node')
+];
 const bridgeMissingHint = () => {
     const hint = nativeLoadError ? nativeLoadError.message : 'mi_bridge.node missing';
-    return `[BRIDGE] Native addon unavailable (${hint}). 请确认 mi_bridge.node 与依赖 DLL (libssl/libcrypto/libmysql,vcruntime/msvcp) 位于 resources/app.asar.unpacked/mi_bridge/build/Release 或同级目录；如需演示模式，请设置 MI_ALLOW_BRIDGE_MOCK=1。`;
+    return `[BRIDGE] Native addon unavailable (${hint}). 已尝试: ${bridgeCandidates.join(' ; ')}。请确认 mi_bridge.node 与依赖 DLL (libssl/libcrypto/libmysql,vcruntime/msvcp) 位于上述目录；如需演示模式，请设置 MI_ALLOW_BRIDGE_MOCK=1。`;
+};
+
+const errorBridge = {
+    isInitialized: false,
+    status: 0,
+    init: async () => { throw new Error(bridgeMissingHint()); },
+    connect: async () => { throw new Error(bridgeMissingHint()); },
+    login: async () => { throw new Error(bridgeMissingHint()); },
+    sendMessage: () => { throw new Error(bridgeMissingHint()); },
+    registerMsgCallback: () => {},
+    sendFile: async () => { throw new Error(bridgeMissingHint()); },
+    secureDelete: async () => { throw new Error(bridgeMissingHint()); },
+    getStatus: () => 0
 };
 
 const Bridge = native ? {
@@ -84,22 +118,17 @@ const Bridge = native ? {
         return true;
     },
     getStatus: () => Bridge.status
-} : {
-    // 硬失败版本：保持 API 存在，便于渲染层给出明确提示
-    isInitialized: false,
-    status: 0,
-    init: async () => { throw new Error(bridgeMissingHint()); },
-    connect: async () => { throw new Error(bridgeMissingHint()); },
-    login: async () => { throw new Error(bridgeMissingHint()); },
-    sendMessage: () => { throw new Error(bridgeMissingHint()); },
-    registerMsgCallback: () => {},
-    sendFile: async () => { throw new Error(bridgeMissingHint()); },
-    secureDelete: async () => { throw new Error(bridgeMissingHint()); },
-    getStatus: () => 0
-};
+} : errorBridge;
 
 // --- 暴露给渲染进程的安全 API ---
 contextBridge.exposeInMainWorld('electronAPI', {
+    bridgeStatus: () => ({
+        nativeLoaded: !!native,
+        nativeLoadedPath,
+        allowMockBridge,
+        nativeLoadError: nativeLoadError ? nativeLoadError.message : null,
+        candidates: bridgeCandidates
+    }),
     // 窗口操作
     loginSuccess: () => ipcRenderer.send('login-success'),
     loginClose: () => ipcRenderer.send('login-close'),

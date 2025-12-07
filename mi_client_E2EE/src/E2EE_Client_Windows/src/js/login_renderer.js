@@ -1,7 +1,10 @@
 const api = window.electronAPI;
 if (!api || !api.core) {
-    const hint = 'bridge 未加载。请确认 mi_bridge.node 与依赖 DLL 在 resources/app.asar.unpacked/mi_bridge/build/Release，或设置 MI_ALLOW_BRIDGE_MOCK=1 仅做演示。';
-    alert(`登录失败: preload 未暴露 electronAPI.core。\n${hint}`);
+    const status = api && api.bridgeStatus ? api.bridgeStatus() : null;
+    const hint = status
+        ? `bridge 未加载。nativeLoaded=${status.nativeLoaded}, allowMock=${status.allowMockBridge}, error=${status.nativeLoadError || '未知'}, candidates=${status.candidates || []}`
+        : 'bridge 未加载，preload 未暴露 electronAPI.core。';
+    alert(`登录失败: ${hint}`);
     throw new Error(hint);
 }
 

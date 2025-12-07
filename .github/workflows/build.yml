@@ -181,6 +181,15 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
+          function Get-FirstOrNull($paths, $filters) {
+            foreach ($p in $paths) {
+              if (-not (Test-Path $p)) { continue }
+              $hit = Get-ChildItem -Path $p -Recurse -ErrorAction SilentlyContinue -Include $filters | Select-Object -First 1
+              if ($hit) { return $hit }
+            }
+            return $null
+          }
+
           New-Item -ItemType Directory -Force -Path dist | Out-Null
           $unpacked = Get-ChildItem mi_client_E2EE/src/E2EE_Client_Windows/dist -Directory -Filter "*win-unpacked*" | Select-Object -First 1
           if (-not $unpacked) { Write-Error "win-unpacked not found after build"; exit 1 }
@@ -191,19 +200,40 @@ jobs:
           )
           New-Item -ItemType Directory -Force -Path $targets | Out-Null
           $dlls = @()
-          $ssl = Get-ChildItem "C:\Program Files" -Recurse -ErrorAction SilentlyContinue -Include "libssl-*-x64.dll","libssl-3*.dll","libssl-1_1-x64.dll" | Select-Object -First 1
-          $crypto = Get-ChildItem "C:\Program Files" -Recurse -ErrorAction SilentlyContinue -Include "libcrypto-*-x64.dll","libcrypto-3*.dll","libcrypto-1_1-x64.dll" | Select-Object -First 1
-          $mysql = Get-ChildItem "C:\Program Files" -Recurse -ErrorAction SilentlyContinue -Include "libmysql.dll" | Select-Object -First 1
-          $vc = Get-ChildItem "C:\Windows\System32" -ErrorAction SilentlyContinue -Include "vcruntime140*.dll","msvcp140*.dll" | Select-Object -First 3
+          $ssl = Get-FirstOrNull @("C:\Program Files\OpenSSL-Win64\bin","C:\Program Files\OpenSSL-Win64","C:\Program Files","C:\Program Files (x86)") @("libssl-*-x64.dll","libssl-3*.dll","libssl-1_1-x64.dll","libssl.dll")
+          $crypto = Get-FirstOrNull @("C:\Program Files\OpenSSL-Win64\bin","C:\Program Files\OpenSSL-Win64","C:\Program Files","C:\Program Files (x86)") @("libcrypto-*-x64.dll","libcrypto-3*.dll","libcrypto-1_1-x64.dll","libcrypto.dll")
+          $mysql = Get-FirstOrNull @("C:\Program Files","C:\Program Files (x86)") @("libmysql.dll")
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          $vcRoots = @()
+          if (Test-Path $vswhere) {
+            $vcPath = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Redist.14 -property installationPath
+            if ($vcPath) { $vcRoots += "$vcPath\VC\Redist\MSVC" }
+          }
+          $vcRoots += "C:\Windows\System32"
+          $vc = @()
+          foreach ($root in $vcRoots) {
+            if (-not (Test-Path $root)) { continue }
+            $vc += Get-ChildItem $root -Recurse -ErrorAction SilentlyContinue -Include "vcruntime140*.dll","msvcp140*.dll" | Select-Object -First 6
+          }
           if (-not $ssl -or -not $crypto) { Write-Error "OpenSSL runtime dlls not found"; exit 1 }
           $dlls += @($ssl, $crypto)
           if ($mysql) { $dlls += $mysql }
           if ($vc) { $dlls += $vc }
+          $dlls = $dlls | Where-Object { $_ } | Sort-Object -Property FullName -Unique
           foreach ($target in $targets) {
             foreach ($dll in $dlls) {
               Copy-Item $dll.FullName $target -Force
             }
           }
+          # sanity checks
+          $requiredPatterns = @("mi_bridge.node","libssl*.dll","libcrypto*.dll","vcruntime140*.dll","msvcp140*.dll")
+          foreach ($target in $targets) {
+            foreach ($pat in $requiredPatterns) {
+              $hit = Get-ChildItem $target -Filter $pat -ErrorAction SilentlyContinue | Select-Object -First 1
+              if (-not $hit) { Write-Error "Missing $pat in $target"; exit 1 }
+            }
+          }
+
           $zipDir = (Resolve-Path dist).Path
           $zipPath = Join-Path $zipDir "client-electron-windows.zip"
           if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
